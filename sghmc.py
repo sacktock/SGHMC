@@ -12,7 +12,7 @@ def cycle(iterable):
             yield x
 
 class SGHMC(MCMCKernel):
-    """Hamiltonian Monte Carlo kernel.
+    """Naive Stochastic Gradient Hamiltonian Monte Carlo kernel.
     
     Parameters
     ----------
@@ -23,8 +23,11 @@ class SGHMC(MCMCKernel):
     step_size : int, default=1
         The size of a single step taken while simulating Hamiltonian dynamics
 
-    num_steps
+    num_steps : int, default 10
         The number of steps to simulate Hamiltonian dynamics
+        
+    do_mh_correction : bool, default False
+        compute the mh correction term using the whole dataset
     """
 
     def __init__(self, model, data, batch_size=5, step_size=1, num_steps=10, do_mh_correction=False):
@@ -32,8 +35,6 @@ class SGHMC(MCMCKernel):
         self.data = data
         self.data_size = len(self.data)
         self.batch_size = batch_size
-        self.dataloader = torch.utils.data.DataLoader(self.data, batch_size =self.batch_size, shuffle=True, drop_last=True)
-        self.data_iter = iter(cycle(self.dataloader))
         self.step_size = step_size
         self.num_steps = num_steps
         self.do_mh_correction = do_mh_correction
@@ -89,9 +90,13 @@ class SGHMC(MCMCKernel):
 
         # Increment the step counter
         self._step_count += 1
+        
+        # Sample a random mini batch
+        perm = torch.randperm(self.data_size)
+        idx = perm[:self.batch_size]
+        batch = self.data[idx]
 
-        batch = next(self.data_iter)
-
+        # Compute the new potential fn
         _, potential_fn, transforms, _ = initialize_model(
             self.model,
             model_args=(batch,),
