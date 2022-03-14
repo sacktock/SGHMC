@@ -266,7 +266,14 @@ def _guess_max_plate_nesting(model, args, kwargs):
 
 class _PEMaker:
     def __init__(
-        self, model, model_args, model_kwargs, trace_prob_evaluator, transforms, scale_likelihood
+        self,
+        model,
+        model_args,
+        model_kwargs,
+        trace_prob_evaluator,
+        transforms,
+        observation_nodes,
+        scale_likelihood
     ):
         self.model = model
         self.model_args = model_args
@@ -274,6 +281,7 @@ class _PEMaker:
         self.trace_prob_evaluator = trace_prob_evaluator
         self.transforms = transforms
         self._compiled_fn = None
+        self.observation_nodes = observation_nodes
         self.scale_likelihood = scale_likelihood
 
     def _potential_fn(self, params):
@@ -283,7 +291,7 @@ class _PEMaker:
             *self.model_args, **self.model_kwargs
         )
         if self.scale_likelihood != 1.0:
-            for node in model_trace.observation_nodes:
+            for node in self.observation_nodes:
                 model_trace.nodes[node]['scale'] = self.scale_likelihood
         log_joint = self.trace_prob_evaluator.log_prob(model_trace)
         for name, t in self.transforms.items():
@@ -440,9 +448,6 @@ def initialize_model(
     )
     prototype_model = poutine.trace(InitMessenger(init_strategy)(model))
     model_trace = prototype_model.get_trace(*model_args, **model_kwargs)
-    if scale_likelihood != 1.0:
-        for node in model_trace.observation_nodes:
-            model_trace.nodes[node]['scale'] = scale_likelihood
     has_enumerable_sites = False
     prototype_samples = {}
     for name, node in model_trace.iter_stochastic_nodes():
@@ -467,8 +472,16 @@ def initialize_model(
         model_trace, has_enumerable_sites, max_plate_nesting
     )
 
+    observation_nodes = model_trace.observation_nodes
+
     pe_maker = _PEMaker(
-        model, model_args, model_kwargs, trace_prob_evaluator, transforms, scale_likelihood
+        model, 
+        model_args, 
+        model_kwargs, 
+        trace_prob_evaluator, 
+        transforms, 
+        observation_nodes,
+        scale_likelihood
     )
 
     if initial_params is None:
