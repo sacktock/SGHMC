@@ -6,13 +6,8 @@ from pyro.infer.mcmc.mcmc_kernel import MCMCKernel
 from util import initialize_model
 from pyro.ops.integrator import potential_grad
 
-def cycle(iterable):
-    while True:
-        for x in iterable:
-            yield x
-
 class SGHMC(MCMCKernel):
-    """Naive Stochastic Gradient Hamiltonian Monte Carlo kernel.
+    """Stochastic Gradient Hamiltonian Monte Carlo kernel.
     
     Parameters
     ----------
@@ -26,11 +21,14 @@ class SGHMC(MCMCKernel):
     num_steps : int, default 10
         The number of steps to simulate Hamiltonian dynamics
         
+    with_friction : bool, default False
+        Use friction term when updating momentum
+
     do_mh_correction : bool, default False
         compute the mh correction term using the whole dataset
     """
 
-    def __init__(self, model, data, batch_size=5, step_size=1, num_steps=10, do_mh_correction=False):
+    def __init__(self, model, data, batch_size=5, step_size=1, num_steps=10, with_friction=True, do_mh_correction=False):
         self.model = model
         self.data = data
         self.data_size = len(self.data)
@@ -38,7 +36,10 @@ class SGHMC(MCMCKernel):
         self.step_size = step_size
         self.num_steps = num_steps
         self.do_mh_correction = do_mh_correction
+        self.with_friction = with_friction
         self._initial_params = None
+        self.C = 1
+        self.B_hat = 0
 
     def setup(self, warmup_steps, *model_args, **model_kwargs):
 
@@ -74,10 +75,24 @@ class SGHMC(MCMCKernel):
             )
         return p
 
+    # Sample the momentum variables from a standard normal
+    def _sample_friction(self, sample_prefix):
+        f = {}
+        for site, size in self._param_sizes.items():
+            f[site] = pyro.sample(
+                f"{sample_prefix}_{site}",
+                dist.Normal(torch.zeros(size), 2*(self.C - self.B_hat)*self.step_size*torch.ones(size))
+            )
+        return f
+
     # Computes orig + step * grad elementwise, where orig and grad are
     # dictionaries with the same keys
-    def _step_variable(self, orig, step, grad):
-        return {site:(orig[site] + step * grad[site]) for site in orig}
+    def _step_variable(self, orig, step, grad):   
+        if self.with_friction:
+            f = self._sample_friction(f"q_{self._step_count}")
+            return {site:(orig[site] + step * grad[site] - step * self.C * orig[site] + (step / self.step_size) * f[site]) for site in orig}
+        else:
+            return {site:(orig[site] + step * grad[site]) for site in orig}
 
     # Compute the kinetic energy, given the momentum
     def _kinetic_energy(self, p):
