@@ -86,7 +86,7 @@ class SGHMC(StochasticMCMCKernel):
             return {site:(orig[site] + step * grad[site]) for site in orig}
 
     # Sample the momentum variables from a standard normal
-    def _sample_momentum(self, sample_prefix):
+    def sample_momentum(self, sample_prefix):
         p = {}
         for site, size in self._param_sizes.items():
             p[site] = pyro.sample(
@@ -96,7 +96,7 @@ class SGHMC(StochasticMCMCKernel):
         return p
 
     # Get the potential function for a minibatch
-    def _get_potential_fn(self, batch):
+    def get_potential_fn(self, batch):
         _, potential_fn, _, _ = initialize_model(
             self.model,
             model_args=(batch,),
@@ -106,16 +106,16 @@ class SGHMC(StochasticMCMCKernel):
         return potential_fn
 
     # Update the position one step
-    def _update_position(self, p, q, potential_fn, step_size):
+    def update_position(self, p, q, potential_fn, step_size):
         return self._step_variable(q, self.step_size, p)
 
     # Update the momentum one step
-    def _update_momentum(self, p, q, potential_fn, step_size):
+    def update_momentum(self, p, q, potential_fn, step_size):
         grad_q, _ = potential_grad(potential_fn, q)
         return self._step_variable(p, - step_size, grad_q)
 
     # Compute the kinetic energy, given the momentum
-    def _kinetic_energy(self, p):
+    def kinetic_energy(self, p):
         energy = torch.zeros(1)
         for site, value in p.items():
             energy += torch.dot(value, value)

@@ -22,27 +22,27 @@ class StochasticMCMCKernel(MCMCKernel, metaclass=ABCMeta):
 
 
     @abstractmethod
-    def _sample_momentum(self):
+    def sample_momentum(self):
         """Resample the momentum variables."""
         raise NotImplementedError
 
     @abstractmethod
-    def _get_potential_fn(self, batch):
+    def get_potential_fn(self, batch):
         """Calculates the potential function, given a minibatch."""
         raise NotImplementedError
 
     @abstractmethod
-    def _update_position(self, p, q, potential_fn, step_size):
+    def update_position(self, p, q, potential_fn, step_size):
         """Update the position variables."""
         raise NotImplementedError
 
     @abstractmethod
-    def _update_momentum(self, p, q, potential_fn, step_size):
+    def update_momentum(self, p, q, potential_fn, step_size):
         """Update the position variables."""
         raise NotImplementedError
 
     @abstractmethod
-    def _kinetic_energy(self, p):
+    def kinetic_energy(self, p):
         """Compute the kinetic energy, given the momentum."""
         raise NotImplementedError
 
@@ -57,37 +57,37 @@ class StochasticMCMCKernel(MCMCKernel, metaclass=ABCMeta):
         batch = self.data[idx]
 
         # Compute the new potential fn
-        potential_fn = self._get_potential_fn(batch)
+        potential_fn = self.get_potential_fn(batch)
 
         # Position variable
         q = q_current = params
 
         # Resample the momentum
-        p = p_current = self._sample_momentum(f"q_{self._step_count}")
+        p = p_current = self.sample_momentum(f"q_{self._step_count}")
 
         ## Simulate Hamiltonian dynamics using leapfrog method
         # Half-step momentum
-        p = self._update_momentum(p, q, potential_fn, self.step_size / 2)
+        p = self.update_momentum(p, q, potential_fn, self.step_size / 2)
 
         # Full-step position and momentum alternately
         for i in range(self.num_steps):
-            q = self._update_position(p, q, potential_fn, self.step_size)
+            q = self.update_position(p, q, potential_fn, self.step_size)
             if i < self.num_steps - 1:
-                p = self._update_momentum(p, q, potential_fn, self.step_size)
+                p = self.update_momentum(p, q, potential_fn, self.step_size)
 
         # Finally half-step momentum
-        p = self._update_momentum(p, q, potential_fn, self.step_size / 2)
+        p = self.update_momentum(p, q, potential_fn, self.step_size / 2)
         
         ## Metropolis-Hastings correction
         if self.do_mh_correction:
             
             # Get the potential function for the whole dataset
-            potential_fn = self._get_potential_fn(self.data)
+            potential_fn = self.get_potential_fn(self.data)
 
             # Compute the current and proposed total energies
             energy_current = (self.potential_fn(q_current) 
-                              + self._kinetic_energy(p_current))
-            energy_proposal = self.potential_fn(q) + self._kinetic_energy(p)
+                              + self.kinetic_energy(p_current))
+            energy_proposal = self.potential_fn(q) + self.kinetic_energy(p)
 
             # Compute the acceptance probability
             energy_delta = energy_current - energy_proposal
