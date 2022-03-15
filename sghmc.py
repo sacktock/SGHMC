@@ -6,7 +6,9 @@ from pyro.infer.mcmc.mcmc_kernel import MCMCKernel
 from util import initialize_model
 from pyro.ops.integrator import potential_grad
 
-class SGHMC(MCMCKernel):
+from base import StochasticMCMCKernel
+
+class SGHMC(StochasticMCMCKernel):
     """Stochastic Gradient Hamiltonian Monte Carlo kernel.
     
     Parameters
@@ -28,14 +30,14 @@ class SGHMC(MCMCKernel):
         compute the mh correction term using the whole dataset
     """
 
-    def __init__(self, model, data, batch_size=5, step_size=1, num_steps=10, with_friction=True, do_mh_correction=False):
-        self.model = model
-        self.data = data
-        self.data_size = len(self.data)
-        self.batch_size = batch_size
-        self.step_size = step_size
-        self.num_steps = num_steps
-        self.do_mh_correction = do_mh_correction
+    def __init__(self, model, data, batch_size=5, step_size=1, num_steps=10,
+                 with_friction=True, do_mh_correction=False):
+        super().__init__(model,
+            data,
+            batch_size,
+            step_size,
+            num_steps, 
+            do_mh_correction)
         self.with_friction = with_friction
         self._initial_params = None
         self.C = 1
@@ -64,17 +66,6 @@ class SGHMC(MCMCKernel):
         # Set the step counter to 0
         self._step_count = 0
 
-
-    # Sample the momentum variables from a standard normal
-    def _sample_momentum(self, sample_prefix):
-        p = {}
-        for site, size in self._param_sizes.items():
-            p[site] = pyro.sample(
-                f"{sample_prefix}_{site}",
-                dist.Normal(torch.zeros(size), torch.ones(size))
-            )
-        return p
-
     # Sample the momentum variables from a standard normal
     def _sample_friction(self, sample_prefix):
         f = {}
@@ -94,89 +85,38 @@ class SGHMC(MCMCKernel):
         else:
             return {site:(orig[site] + step * grad[site]) for site in orig}
 
-    # Compute the kinetic energy, given the momentum
-    def _kinetic_energy(self, p):
-        energy = torch.zeros(1)
-        for site, value in p.items():
-            energy += torch.dot(value, value)
-        return 0.5 * energy
+    # Sample the momentum variables from a standard normal
+    def sample_momentum(self, sample_prefix):
+        p = {}
+        for site, size in self._param_sizes.items():
+            p[site] = pyro.sample(
+                f"{sample_prefix}_{site}",
+                dist.Normal(torch.zeros(size), torch.ones(size))
+            )
+        return p
 
-    def sample(self, params):
-
-        # Increment the step counter
-        self._step_count += 1
-        
-        # Sample a random mini batch
-        perm = torch.randperm(self.data_size)
-        idx = perm[:self.batch_size]
-        batch = self.data[idx]
-
-        # Compute the new potential fn
-        _, potential_fn, transforms, _ = initialize_model(
+    # Get the potential function for a minibatch
+    def get_potential_fn(self, batch):
+        _, potential_fn, _, _ = initialize_model(
             self.model,
             model_args=(batch,),
             initial_params=self._initial_params,
             scale_likelihood=self.data_size/self.batch_size
         )
+        return potential_fn
 
-        self.potential_fn = potential_fn
+    # Update the position one step
+    def update_position(self, p, q, potential_fn, step_size):
+        return self._step_variable(q, self.step_size, p)
 
-        # Position variable
-        q = q_current = params
+    # Update the momentum one step
+    def update_momentum(self, p, q, potential_fn, step_size):
+        grad_q, _ = potential_grad(potential_fn, q)
+        return self._step_variable(p, - step_size, grad_q)
 
-        # Resample the momentum
-        p = p_current = self._sample_momentum(f"q_{self._step_count}")
-
-        ## Simulate Hamiltonian dynamics using leapfrog method
-        # Half-step momentum
-        grad_q, _ = potential_grad(self.potential_fn, q)
-        p = self._step_variable(p, - self.step_size / 2, grad_q)
-
-        # Full-step position and momentum alternately
-        for i in range(self.num_steps):
-            q = self._step_variable(q, self.step_size, p)
-            if i < self.num_steps - 1:
-                grad_q, _ = potential_grad(self.potential_fn, q)
-                p = self._step_variable(p, - self.step_size, grad_q)
-
-        # Finally half-step momentum
-        grad_q, _ = potential_grad(self.potential_fn, q)
-        p = self._step_variable(p, - self.step_size / 2, grad_q)
-        
-        if self.do_mh_correction:
-            ## Metropolis-Hastings correction
-            # Compute the current and proposed total energies
-            _, potential_fn, transforms, _ = initialize_model(
-                self.model,
-                model_args=(self.data,),
-                initial_params=q,
-                scale_likelihood=1.0
-            )
-
-            energy_current = (self.potential_fn(q_current) 
-                              + self._kinetic_energy(p_current))
-            energy_proposal = self.potential_fn(q) + self._kinetic_energy(p)
-
-            # Compute the acceptance probability
-            energy_delta = energy_current - energy_proposal
-            accept_prob = energy_delta.exp().clamp(max=1.0).item()
-
-            # Draw a uniform random sample
-            rand = pyro.sample(f"rand_{self._step_count}", dist.Uniform(0,1))
-
-            # Accept the new point with probability `accept_prob`
-            if rand < accept_prob:
-                return q
-            else:
-                return q_current
-        else:
-            return q
-
-
-    @property
-    def initial_params(self):
-        return self._initial_params
-
-    @initial_params.setter
-    def initial_params(self, params):
-        self._initial_params = params
+    # Compute the kinetic energy, given the momentum
+    def kinetic_energy(self, p):
+        energy = torch.zeros(1)
+        for site, value in p.items():
+            energy += torch.dot(value, value)
+        return 0.5 * energy
