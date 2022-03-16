@@ -47,13 +47,20 @@ class SGHMC(StochasticMCMCKernel):
 
         # Compute the initial parameter and potential function from the model
         # Use entire dataset to find initial parameters using pyros in-built search
+        # First model argument must be the dataset !!!!
         self.model_args = model_args
         self.model_kwargs = model_kwargs
+        try:
+            batch_size = self.model_args[0].size(0)
+        except AttributeError:
+            raise RuntimeError('Could not compute get the size of the dataset - \
+                    please make sure the first model argument is a pytorch tensor representing the dataset')
         initial_params, potential_fn, transforms, _ = initialize_model(
             self.model,
             self.model_args,
             self.model_kwargs,
             initial_params = self._initial_params,
+            scale_likelihood = batch_size/self.data_size
         )
         self._initial_params = initial_params
         self.potential_fn = potential_fn
