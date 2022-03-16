@@ -46,12 +46,14 @@ class SGHMC(StochasticMCMCKernel):
     def setup(self, warmup_steps, *model_args, **model_kwargs):
 
         # Compute the initial parameter and potential function from the model
+        # Use entire dataset to find initial parameters using pyros in-built search
+        self.model_args = model_args
+        self.model_kwargs = model_kwargs
         initial_params, potential_fn, transforms, _ = initialize_model(
             self.model,
-            model_args,
-            model_kwargs,
+            self.model_args,
+            self.model_kwargs,
             initial_params = self._initial_params,
-            scale_likelihood=self.data_size/self.batch_size
         )
         self._initial_params = initial_params
         self.potential_fn = potential_fn
@@ -78,7 +80,13 @@ class SGHMC(StochasticMCMCKernel):
 
     # Computes orig + step * grad elementwise, where orig and grad are
     # dictionaries with the same keys
-    def _step_variable(self, orig, step, grad):   
+    def _step_position(self, orig, step, grad):   
+        return {site:(orig[site] + step * grad[site]) for site in orig}
+        
+    # Computes orig + step * grad elementwise, where orig and grad are
+    # dictionaries with the same keys
+    # If with_friction adds additional update terms elementwise
+    def _step_momentum(self, orig, step, grad):   
         if self.with_friction:
             f = self._sample_friction(f"q_{self._step_count}")
             return {site:(orig[site] + step * grad[site] - step * self.C * orig[site] + (step / self.step_size) * f[site]) for site in orig}
@@ -99,7 +107,8 @@ class SGHMC(StochasticMCMCKernel):
     def get_potential_fn(self, batch):
         _, potential_fn, _, _ = initialize_model(
             self.model,
-            model_args=(batch,),
+            (batch,) + self.model_args[1:],
+            self.model_kwargs,
             initial_params=self._initial_params,
             scale_likelihood=self.data_size/self.batch_size
         )
@@ -107,12 +116,12 @@ class SGHMC(StochasticMCMCKernel):
 
     # Update the position one step
     def update_position(self, p, q, potential_fn, step_size):
-        return self._step_variable(q, self.step_size, p)
+        return self._step_position(q, self.step_size, p)
 
     # Update the momentum one step
     def update_momentum(self, p, q, potential_fn, step_size):
         grad_q, _ = potential_grad(potential_fn, q)
-        return self._step_variable(p, - step_size, grad_q)
+        return self._step_momentum(p, - step_size, grad_q)
 
     # Compute the kinetic energy, given the momentum
     def kinetic_energy(self, p):
