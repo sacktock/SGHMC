@@ -51,17 +51,12 @@ class SGHMC(StochasticMCMCKernel):
         self.model_kwargs = model_kwargs
         self.data = model_args[0]
         self.data_size = len(model_args[0])
-        try:
-            batch_size = self.model_args[0].size(0)
-        except AttributeError:
-            raise RuntimeError('Could not compute get the size of the dataset - \
-                    please make sure the first model argument is a pytorch tensor representing the dataset')
         initial_params, potential_fn, transforms, _ = initialize_model(
             self.model,
             self.model_args,
             self.model_kwargs,
             initial_params = self._initial_params,
-            scale_likelihood = batch_size/self.data_size
+            scale_likelihood = self.batch_size/self.data_size
         )
         self._initial_params = initial_params
         self.potential_fn = potential_fn
