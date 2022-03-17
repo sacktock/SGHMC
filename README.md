@@ -9,4 +9,6 @@ Emily B. Fox and Carlos Guestrin.
 We are integrating our implementation of the algorithms in Pyro.
 
 - [sghmc.py](sghmc.py) contains our implementation of the Stochastic Gradient 
-Hamiltonian Monte Carlo algorithm.
+Hamiltonian Monte Carlo (SGHMC) algorithm.
+- [demo.ipynb](demo.ipynb) a simple demo that goes through the caveats of our implementation of SGHMC and to how get started using it.
+- [example.ipynb](example.ipynb) a beta prior, binomial likelihood coin flip example that shows our implementation of SGHMC sampling from the posterior distribution. 
