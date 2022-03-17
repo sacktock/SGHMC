@@ -13,6 +13,8 @@ class SGHMC(StochasticMCMCKernel):
     
     Parameters
     ----------
+    subsample_positions : list, default [0] / 1st positional argument only
+        Specifies which positional arguments of the model to subsample during runtime
         
     batch_size : int, default=5
         The size of the minibatches to use
@@ -30,13 +32,14 @@ class SGHMC(StochasticMCMCKernel):
         compute the mh correction term using the whole dataset
     """
 
-    def __init__(self, model, batch_size=5, step_size=1, num_steps=10,
+    def __init__(self, model, subsample_positions=[0], batch_size=5, step_size=1, num_steps=10,
                  with_friction=True, do_mh_correction=False):
         super().__init__(model,
-            batch_size,
-            step_size,
-            num_steps, 
-            do_mh_correction)
+                         subsample_positions,
+                         batch_size,
+                         step_size,
+                         num_steps, 
+                         do_mh_correction)
         self.with_friction = with_friction
         self._initial_params = None
         self.C = 1
@@ -44,13 +47,27 @@ class SGHMC(StochasticMCMCKernel):
 
     def setup(self, warmup_steps, *model_args, **model_kwargs):
 
-        # Compute the initial parameter and potential function from the model
-        # Use entire dataset to find initial parameters using pyros in-built search
-        # First model argument must be the dataset !!!!
+        # Save positional and keyword arguments
         self.model_args = model_args
         self.model_kwargs = model_kwargs
-        self.data = model_args[0]
-        self.data_size = len(model_args[0])
+        
+        # Compute the data size and check if it is a pytorch tensor
+        try:
+            self.data_size = self.model_args[self.subsample_positions[0]].size(0)
+        except AttributeError:
+            raise RuntimeError("Positional argument {} is not a pytorch tensor with size attribute".format(self.subsample_positions[0]))
+            
+        # Check all the data is the same length, otherwise we can't meaningfully subsample
+        for pos in self.subsample_positions[1:]:
+            try:
+                assert self.data_size == self.model_args[pos].size(0)
+            except AttributeError:
+                raise RuntimeError("Positional argument {} is not a pytorch tensor with size attribute".format(pos))
+            except AssertionError:
+                raise RuntimeError("Can't subsample arguments with different lengths")
+                
+        # Compute the initial parameter and potential function from the model
+        # Use entire dataset to find initial parameters using pyros in-built search    
         initial_params, potential_fn, transforms, _ = initialize_model(
             self.model,
             self.model_args,
@@ -106,13 +123,30 @@ class SGHMC(StochasticMCMCKernel):
         return p
 
     # Get the potential function for a minibatch
-    def get_potential_fn(self, batch):
+    def get_potential_fn(self, subsample=False):
+        if subsample:
+            model_args_lst = list(self.model_args).copy()
+            
+            # Sample random indices
+            perm = torch.randperm(self.data_size)
+            idx = perm[:self.batch_size]
+            
+            # Sample a random mini batch for each subsampled argument
+            for pos in self.subsample_positions:
+                model_args_lst[pos] = model_args_lst[pos][idx]
+  
+            model_args = tuple(model_args_lst)
+            batch_size = self.batch_size
+        else:
+            batch_size = self.data_size
+            model_args = self.model_args
+            
         _, potential_fn, _, _ = initialize_model(
             self.model,
-            (batch,) + self.model_args[1:],
+            model_args,
             self.model_kwargs,
             initial_params=self._initial_params,
-            scale_likelihood=self.data_size/self.batch_size
+            scale_likelihood=self.data_size/batch_size
         )
         return potential_fn
 

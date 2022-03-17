@@ -9,9 +9,10 @@ from pyro.infer.mcmc.mcmc_kernel import MCMCKernel
 class StochasticMCMCKernel(MCMCKernel, metaclass=ABCMeta):
     """Abstract base class for Stochastic MCMC kernels."""
 
-    def __init__(self, model, batch_size=5, step_size=1, num_steps=10, 
+    def __init__(self, model, subsample_positions=[0], batch_size=5, step_size=1, num_steps=10, 
                  do_mh_correction=False):
         self.model = model
+        self.subsample_positions = subsample_positions
         self.batch_size = batch_size
         self.step_size = step_size
         self.num_steps = num_steps
@@ -48,14 +49,9 @@ class StochasticMCMCKernel(MCMCKernel, metaclass=ABCMeta):
 
         # Increment the step counter
         self._step_count += 1
-        
-        # Sample a random mini batch
-        perm = torch.randperm(self.data_size)
-        idx = perm[:self.batch_size]
-        batch = self.data[idx]
 
         # Compute the new potential fn
-        potential_fn = self.get_potential_fn(batch)
+        potential_fn = self.get_potential_fn(subsample=True)
 
         # Position variable
         q = q_current = params
@@ -80,7 +76,7 @@ class StochasticMCMCKernel(MCMCKernel, metaclass=ABCMeta):
         if self.do_mh_correction:
             
             # Get the potential function for the whole dataset
-            potential_fn = self.get_potential_fn(self.data)
+            potential_fn = self.get_potential_fn(subsample=False)
 
             # Compute the current and proposed total energies
             energy_current = (self.potential_fn(q_current) 
