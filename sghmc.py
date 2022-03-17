@@ -14,8 +14,8 @@ class SGHMC(StochasticMCMCKernel):
     Parameters
     ----------
         
-    model
-        The pyro model from which to sample.
+    batch_size : int, default=5
+        The size of the minibatches to use
 
     step_size : int, default=1
         The size of a single step taken while simulating Hamiltonian dynamics
@@ -30,10 +30,9 @@ class SGHMC(StochasticMCMCKernel):
         compute the mh correction term using the whole dataset
     """
 
-    def __init__(self, model, data, batch_size=5, step_size=1, num_steps=10,
+    def __init__(self, model, batch_size=5, step_size=1, num_steps=10,
                  with_friction=True, do_mh_correction=False):
         super().__init__(model,
-            data,
             batch_size,
             step_size,
             num_steps, 
@@ -50,17 +49,14 @@ class SGHMC(StochasticMCMCKernel):
         # First model argument must be the dataset !!!!
         self.model_args = model_args
         self.model_kwargs = model_kwargs
-        try:
-            batch_size = self.model_args[0].size(0)
-        except AttributeError:
-            raise RuntimeError('Could not compute get the size of the dataset - \
-                    please make sure the first model argument is a pytorch tensor representing the dataset')
+        self.data = model_args[0]
+        self.data_size = len(model_args[0])
         initial_params, potential_fn, transforms, _ = initialize_model(
             self.model,
             self.model_args,
             self.model_kwargs,
             initial_params = self._initial_params,
-            scale_likelihood = batch_size/self.data_size
+            scale_likelihood = self.batch_size/self.data_size
         )
         self._initial_params = initial_params
         self.potential_fn = potential_fn

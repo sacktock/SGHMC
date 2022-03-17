@@ -9,11 +9,9 @@ from pyro.infer.mcmc.mcmc_kernel import MCMCKernel
 class StochasticMCMCKernel(MCMCKernel, metaclass=ABCMeta):
     """Abstract base class for Stochastic MCMC kernels."""
 
-    def __init__(self, model, data, batch_size=5, step_size=1, num_steps=10, 
+    def __init__(self, model, batch_size=5, step_size=1, num_steps=10, 
                  do_mh_correction=False):
         self.model = model
-        self.data = data
-        self.data_size = len(self.data)
         self.batch_size = batch_size
         self.step_size = step_size
         self.num_steps = num_steps
