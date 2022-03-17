@@ -55,8 +55,7 @@ class SGHMC(StochasticMCMCKernel):
             self.model,
             self.model_args,
             self.model_kwargs,
-            initial_params = self._initial_params,
-            scale_likelihood = self.batch_size/self.data_size
+            initial_params = self._initial_params
         )
         self._initial_params = initial_params
         self.potential_fn = potential_fn
