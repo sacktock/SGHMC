@@ -14,8 +14,8 @@ class SGHMC(StochasticMCMCKernel):
     Parameters
     ----------
         
-    model
-        The pyro model from which to sample.
+    batch_size : int, default=5
+        The size of the minibatches to use
 
     step_size : int, default=1
         The size of a single step taken while simulating Hamiltonian dynamics
