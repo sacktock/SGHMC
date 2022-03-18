@@ -194,22 +194,15 @@ class SGHMC(MCMCKernel):
         
         ## Metropolis-Hastings correction
         if self.do_mh_correction:
-
-            # Compute the current and proposed total energies
-            energy_current = (self.full_potential_fn(q_current) 
-                              + self.kinetic_energy(p_current))
-            energy_proposal = self.full_potential_fn(q) + self.kinetic_energy(p)
-
             # Compute the acceptance probability
-            energy_delta = energy_current - energy_proposal
-            accept_prob = energy_delta.exp().clamp(max=1.0).item()
+            accept_prob = self._compute_accept_prob(self.full_potential_fn, q_current, p_current, q, p)
 
             # Draw a uniform random sample
             rand = pyro.sample(f"rand_{self._step_count}", dist.Uniform(0,1))
 
             # Update the step size with the step size adapter using the true acceptance prob
             if self._step_count <= self._warmup_steps and self.do_step_size_adaptation:
-                self._update_step_size_with_acc_prob(accept_prob)
+                self._update_step_size(accept_prob)
 
             # Accept the new point with probability `accept_prob`
             if rand < accept_prob:
@@ -219,30 +212,22 @@ class SGHMC(MCMCKernel):
         else:
             # Update the step size with the step size adapter using a noisy acceptance prob
             if self._step_count <= self._warmup_steps and self.do_step_size_adaptation:
-                self._update_step_size(potential_fn, q_current, p_current, q, p)
+                accept_prob = self._compute_accept_prob(potential_fn, q_current, p_current, q, p)
+                self._update_step_size(accept_prob)
 
             return q
 
-    # Method to update the step size if we have the acceptance probability handy
-    def _update_step_size_with_acc_prob(self, accept_prob):
-        if self._step_count < self._warmup_steps:
-            step_size, _ = self.step_size_adapter.update(accept_prob)
-        elif self._step_count == self._warmup_steps:
-            _, step_size = self.step_size_adapter.update(accept_prob)
-        
-        self.step_size = step_size
-
-    # Method to update the step size 
-    # First compute the acceptance probability using a given potential fn (can be noisy or not)
-    def _update_step_size(self, potential_fn, q_current, p_current, q, p):
+    def _compute_accept_prob(self, potential_fn, q_current, p_current, q, p):
         energy_current = (potential_fn(q_current) 
                               + self.kinetic_energy(p_current))
         energy_proposal = potential_fn(q) + self.kinetic_energy(p)
 
         # Compute the acceptance probability
         energy_delta = energy_current - energy_proposal
-        accept_prob = energy_delta.exp().clamp(max=1.0).item()
-            
+        return energy_delta.exp().clamp(max=1.0).item()
+
+    # Method to update the step size if we have the acceptance probability handy
+    def _update_step_size(self, accept_prob):
         if self._step_count < self._warmup_steps:
             step_size, _ = self.step_size_adapter.update(accept_prob)
         elif self._step_count == self._warmup_steps:
