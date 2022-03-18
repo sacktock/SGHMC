@@ -5,6 +5,7 @@ import pyro.distributions as dist
 from pyro.infer.mcmc.mcmc_kernel import MCMCKernel
 from util import initialize_model
 from pyro.ops.integrator import potential_grad
+from param_tensor_corresponder import ParamTensorCorresponder
 
 class SGHMC(MCMCKernel):
     """Stochastic Gradient Hamiltonian Monte Carlo kernel.
@@ -42,6 +43,7 @@ class SGHMC(MCMCKernel):
         self._initial_params = None
         self.C = 1
         self.B_hat = 0
+        self.corresponder = ParamTensorCorresponder()
 
     def setup(self, warmup_steps, *model_args, **model_kwargs):
 
@@ -76,24 +78,18 @@ class SGHMC(MCMCKernel):
         self.full_potential_fn = potential_fn
         self.transforms = transforms
 
-        # Compute the dimension of each model parameter
-        self._param_sizes = {}
-        for site, values in self._initial_params.items():
-            size = values.numel()
-            self._param_sizes[site] = size
+        # Set up the corresponder between parameter dicts and tensors
+        self.corresponder.configure(initial_params)
 
         # Set the step counter to 0
         self._step_count = 0
 
     # Sample the momentum variables from a standard normal
     def _sample_friction(self, sample_prefix):
-        f = {}
-        for site, size in self._param_sizes.items():
-            f[site] = pyro.sample(
-                f"{sample_prefix}_{site}",
-                dist.Normal(torch.zeros(size), 2*(self.C - self.B_hat)*self.step_size*torch.ones(size))
-            )
-        return f
+        loc = torch.zeros(self.corresponder.total_size)
+        scale = (2 * (self.C - self.B_hat) * self.step_size 
+                 * torch.ones(self.corresponder.total_size))
+        return self.corresponder.normal_sample(loc, scale, sample_prefix)
 
     # Computes orig + step * grad elementwise, where orig and grad are
     # dictionaries with the same keys
@@ -112,13 +108,9 @@ class SGHMC(MCMCKernel):
 
     # Sample the momentum variables from a standard normal
     def sample_momentum(self, sample_prefix):
-        p = {}
-        for site, size in self._param_sizes.items():
-            p[site] = pyro.sample(
-                f"{sample_prefix}_{site}",
-                dist.Normal(torch.zeros(size), torch.ones(size))
-            )
-        return p
+        loc = torch.zeros(self.corresponder.total_size)
+        scale = torch.ones(self.corresponder.total_size)
+        return self.corresponder.normal_sample(loc, scale, sample_prefix)
 
     # Get the potential function for a minibatch
     def get_potential_fn(self, subsample=False):
