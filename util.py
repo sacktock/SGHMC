@@ -11,6 +11,7 @@ from itertools import product
 import torch
 from opt_einsum import shared_intermediates
 from torch.distributions import biject_to
+from torch.autograd.functional import hessian
 
 import pyro
 import pyro.poutine as poutine
@@ -210,7 +211,7 @@ class TraceEinsumEvaluator:
             model_trace.plate_to_symbol.values()
         )
 
-    def _get_log_factors(self, model_trace):
+    def _get_log_factors(self, model_trace, site_filter=lambda name, site: True):
         """
         Aggregates the `log_prob` terms into a list for each
         ordinal.
@@ -220,7 +221,9 @@ class TraceEinsumEvaluator:
         log_probs = OrderedDict()
         # Collect log prob terms per independence context.
         for name, site in model_trace.nodes.items():
-            if site["type"] == "sample" and not isinstance(site["fn"], _Subsample):
+            if (site["type"] == "sample" 
+                    and not isinstance(site["fn"], _Subsample)
+                    and site_filter(name, site)):
                 if is_validation_enabled():
                     check_site_shape(site, self.max_plate_nesting)
                 log_probs.setdefault(self.ordering[name], []).append(
@@ -228,7 +231,7 @@ class TraceEinsumEvaluator:
                 )
         return log_probs
 
-    def log_prob(self, model_trace):
+    def log_prob(self, model_trace, site_filter=lambda name, site: True):
         """
         Returns the log pdf of `model_trace` by appropriately handling
         enumerated log prob factors.
@@ -236,10 +239,8 @@ class TraceEinsumEvaluator:
         :return: log pdf of the trace.
         """
         if not self.has_enumerable_sites:
-            return model_trace.log_prob_sum()
-        log_probs = self._get_log_factors(model_trace)
-        print(log_probs)
-        assert False
+            return model_trace.log_prob_sum(site_filter)
+        log_probs = self._get_log_factors(model_trace, site_filter)
         with shared_intermediates() as cache:
             return contract_to_tensor(log_probs, self._enum_dims, cache=cache)
 
@@ -300,6 +301,20 @@ class _PEMaker:
             )
         return -log_joint
 
+    def _nll_fn(self, params):
+        params_constrained = {k: self.transforms[k].inv(v) for k, v in params.items()}
+        cond_model = poutine.condition(self.model, params_constrained)
+        model_trace = poutine.trace(cond_model).get_trace(
+            *self.model_args, **self.model_kwargs
+        )
+        site_filter = lambda site, name: site not in self.observation_nodes
+        log_joint = self.trace_prob_evaluator.log_prob(model_trace, site_filter)
+        for name, t in self.transforms.items():
+            log_joint = log_joint - torch.sum(
+                t.log_abs_det_jacobian(params_constrained[name], params[name])
+            )
+        return -log_joint
+
     def _potential_fn_jit(self, skip_jit_warnings, jit_options, params):
         if not params:
             return self._potential_fn(params)
@@ -335,6 +350,9 @@ class _PEMaker:
             jit_options = {"check_trace": False} if jit_options is None else jit_options
             return partial(self._potential_fn_jit, skip_jit_warnings, jit_options)
         return self._potential_fn
+
+    def get_nll_fn(self):
+        return self._nll_fn
 
 
 def _find_valid_initial_params(
@@ -395,6 +413,7 @@ def initialize_model(
     init_strategy=init_to_uniform,
     initial_params=None,
     scale_likelihood=1.0,
+    return_nll_fn=False
 ):
     """
     Given a Python callable with Pyro primitives, generates the following model-specific
@@ -503,7 +522,13 @@ def initialize_model(
     potential_fn = pe_maker.get_potential_fn(
         jit_compile, skip_jit_warnings, jit_options
     )
-    return initial_params, potential_fn, transforms, model_trace
+
+    if return_nll_fn:
+        nll_fn = pe_maker.get_nll_fn()
+        return initial_params, potential_fn, nll_fn, transforms, model_trace
+    else:
+        return initial_params, potential_fn, transforms, model_trace
+
 
 
 
@@ -868,3 +893,23 @@ def diagnostics_from_stats(statistics, num_samples, num_chains):
         diag[name] = OrderedDict({"r_hat": (var_estimator / var_within).sqrt()})
 
     return diag
+
+def observed_inforation(nll_fn, theta):
+    """Compute the observed information matrix.
+
+    The observed information is the Hessian of the negative log likehood.
+    
+    Parameters
+    ----------
+    nll_fn : callable
+        The python callable which takes a tensor and returns the negative log
+        likelihood.
+    
+    theta : tensor
+        The parameter set with respect to which we want to find the observed
+        information.
+    """
+    theta.requires_grad_(True)
+    obs_info = hessian(nll_fn, theta)
+    theta.requires_grad_(False)
+    return obs_info
