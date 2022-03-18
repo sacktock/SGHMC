@@ -1,10 +1,12 @@
+from numpy import corrcoef
 import torch
 
 import pyro
 import pyro.distributions as dist
 from pyro.infer.mcmc.mcmc_kernel import MCMCKernel
-from util import initialize_model
 from pyro.ops.integrator import potential_grad
+
+from util import initialize_model, observed_inforation
 from param_tensor_corresponder import ParamTensorCorresponder
 from dual_averaging_step_size import DualAveragingStepSize
 from collections import OrderedDict
@@ -26,29 +28,49 @@ class SGHMC(MCMCKernel):
     num_steps : int, default 10
         The number of steps to simulate Hamiltonian dynamics
         
-    with_friction : bool, default False
+    with_friction : bool, default=True
         Use friction term when updating momentum
+
+    friction_term : dict or None, default=None
+        The friction term to use for the Langevin dynamics. This should be a 
+        dictionary of square tensors, one for each of the model parameters,
+        with the size of each matrix determined by the dimension of each
+        parameter. The default is to use identity matrices for each
+        parameter.
+
+    obs_info_noise : bool, default=True
+        Use the observed information to estimate the noise model
 
     do_mh_correction : bool, default False
         Compute the mh correction term using the whole dataset
-
+        
     do_step_size_adaptation : bool, default True
         Do step size adaptation during warm up phase
+
+    Limitations
+    -----------
+
+    - `friction_term` must be constant, and can't vary according to the values
+    of the parameters.
+    - `friction_term` yeilds a block matrix: friction is applied independently
+    to each parameter. One parameter's values can't affect the friction on
+    another.
     """
 
     def __init__(self, model, subsample_positions=[0], batch_size=5, step_size=0.1, num_steps=10,
-                 with_friction=True, do_mh_correction=False, do_step_size_adaptation=True):
+                 with_friction=True, friction_term=None, obs_info_noise=True, do_mh_correction=False, do_step_size_adaptation=True):
+      
         self.model = model
         self.subsample_positions = subsample_positions
         self.batch_size = batch_size
         self.step_size = step_size
         self.num_steps = num_steps
-        self.do_mh_correction = do_mh_correction
         self.with_friction = with_friction
+        self.friction_term = friction_term
+        self.obs_info_noise = obs_info_noise
+        self.do_mh_correction = do_mh_correction
         self.do_step_size_adaptation = do_step_size_adaptation
         self._initial_params = None
-        self.C = 1
-        self.B_hat = 0
         self.corresponder = ParamTensorCorresponder()
         
     def setup(self, warmup_steps, *model_args, **model_kwargs):
@@ -88,18 +110,29 @@ class SGHMC(MCMCKernel):
         # Set up the corresponder between parameter dicts and tensors
         self.corresponder.configure(initial_params)
 
+        # Compute the friction term as a parameter dict and a block matrix
+        if self.friction_term is None:
+            self.friction_term = {}
+            for name, size in self.corresponder.site_sizes.items():
+                self.friction_term[name] = torch.eye(size)
+        self.friction_term_tensor = self.corresponder.to_block_matrix(
+            self.friction_term
+        )
+        
+        # Set up the obs_info variable
+        self.obs_info = None
+
         # Set up the automatic step size adapter
         self.step_size_adapter = DualAveragingStepSize(self.step_size)
 
         # Set the step counter to 0
         self._step_count = 0
 
-    # Sample the momentum variables from a standard normal
-    def _sample_friction(self, sample_prefix):
+    '''def _sample_friction(self, sample_prefix):
         loc = torch.zeros(self.corresponder.total_size)
         scale = (2 * (self.C - self.B_hat) * self.step_size 
                  * torch.ones(self.corresponder.total_size))
-        return self.corresponder.normal_sample(loc, scale, sample_prefix)
+        return self.corresponder.normal_sample(loc, scale, sample_prefix)'''
 
     # Computes orig + step * mom elementwise, where orig and mom are
     # dictionaries with the same keys
@@ -117,13 +150,14 @@ class SGHMC(MCMCKernel):
             return {site:(orig[site] - self.step_size * grad[site]) for site in orig}
 
     # Sample the momentum variables from a standard normal
-    def sample_momentum(self, sample_prefix):
+    def sample_momentum(self, sample_name):
         loc = torch.zeros(self.corresponder.total_size)
         scale = torch.ones(self.corresponder.total_size)
-        return self.corresponder.normal_sample(loc, scale, sample_prefix)
+        sample = pyro.sample(sample_name, dist.Normal(loc, scale))
+        return self.corresponder.to_params(sample)
 
-    # Get the potential function for a minibatch
-    def get_potential_fn(self, subsample=False):
+    # Get the potential and negative log likelihood functions for a minibatch
+    def get_potential_nll_functions(self, subsample=False):
         if subsample:
             model_args_lst = list(self.model_args).copy()
             
@@ -141,21 +175,56 @@ class SGHMC(MCMCKernel):
             batch_size = self.data_size
             model_args = self.model_args
             
-        _, potential_fn, _, _ = initialize_model(
+        _, potential_fn, nll_fn, _, _ = initialize_model(
             self.model,
             model_args,
             self.model_kwargs,
             initial_params=self._initial_params,
-            scale_likelihood=self.data_size/batch_size
+            scale_likelihood=self.data_size/batch_size,
+            return_nll_fn=True
         )
-        return potential_fn
+        return potential_fn, nll_fn
 
+    def compute_observed_information(self, q, nll_fn):
+        """Compute the observed information at position `q`."""
+
+        # The position as a flat tensor
+        q_tensor = self.corresponder.to_tensor(q)
+
+        # The negative log likehood, modified to accept tensors
+        def nll_fn_tensor(q_tensor):
+            return nll_fn(self.corresponder.to_params(q_tensor))
+
+        return observed_inforation(nll_fn_tensor, q_tensor)
+
+    # Sample the momentum variables from a standard normal
+    def _sample_friction(self, sample_name):
+
+        # Only use the noise term if we have computed it from the observed
+        # information
+        if self.obs_info_noise:
+            noise_term = 0.5 * self.step_size * self.obs_info
+        else:
+            noise_term = 0
+        
+        # Determine the scale and covariace of the friction
+        loc = torch.zeros(self.corresponder.total_size)
+        cov = (2 * (self.friction_term_tensor - noise_term) * self.step_size)
+
+        # Sample the friction
+        sample = pyro.sample(sample_name, dist.MultivariateNormal(loc, cov))
+
+        # Return it as a parameter dictionary
+        return self.corresponder.to_params(sample)
+        
     # Update the position one step
+
     def update_position(self, p, q):
         return self._step_position(q, p)
 
     # Update the momentum one step
     def update_momentum(self, p, q, potential_fn):
+        # Compute the partial derivative with respect to the position
         grad_q, _ = potential_grad(potential_fn, q)
         return self._step_momentum(p, grad_q)
 
@@ -171,13 +240,16 @@ class SGHMC(MCMCKernel):
         self._step_count += 1
 
         # Compute the new potential fn
-        potential_fn = self.get_potential_fn(subsample=True)
+        nll_fn, potential_fn = self.get_potential_nll_functions(subsample=True)
 
         # Position variable
         q = q_current = params
 
         # Resample the momentum
         p = p_current = self.sample_momentum(f"q_{self._step_count}")
+
+        if self.obs_info_noise:
+            self.obs_info = self.compute_observed_information(q, nll_fn)
 
         # Full-step position and momentum alternately
         for i in range(self.num_steps):

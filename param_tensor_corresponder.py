@@ -17,14 +17,14 @@ class ParamTensorCorresponder():
             self._site_sizes[name] = initial_params[name].numel()
         self._total_size = sum(self._site_sizes.values())
 
-    def params_to_tensor(self, params):
+    def to_tensor(self, params):
         """Convert a parameter dict into a flat tensor."""
         cat_list = []
         for name in self._site_names:
             cat_list.append(params[name].detach().reshape(-1))
         return torch.cat(cat_list)
 
-    def tensor_to_params(self, tensor):
+    def to_params(self, tensor):
         """Convert a tensor into a parameter dict."""
         params = {}
         tensor_pos = 0
@@ -34,29 +34,12 @@ class ParamTensorCorresponder():
             tensor_pos += size
         return params
 
-    def normal_sample(self, loc, scale, sample_name):
-        """Sample from a normal distribution, returning a parameter dict.
-        
-        Parameters
-        ----------
-        loc : tensor (1 dimensional)
-            The location tensor
-            
-        scale : tensor (2 dimensional)
-            The covariance matrix
-
-        sample_name : str
-            The name for the sample, for Pyro
-            
-        Return values
-        -------------
-        sample : dict
-            Dictionary of samples for each site name, drawn from the normal
-            distribution
-        """
-        sample_tensor = pyro.sample(sample_name, dist.Normal(loc, scale))
-        return self.tensor_to_params(sample_tensor)
-
+    def to_block_matrix(self, params):
+        """Convert a parameter dict of matrices to a block matrix tensor."""
+        block_list = []
+        for name in self._site_names:
+            block_list.append(params[name].detach())
+        return torch.block_diag(*block_list)
 
     @property
     def site_sizes(self):
