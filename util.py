@@ -5,6 +5,23 @@ import torch
 from torch.distributions import biject_to
 from torch.autograd.functional import hessian
 
+
+import functools
+import traceback as tb
+import warnings
+from collections import OrderedDict, defaultdict
+from functools import partial, reduce
+from itertools import product
+
+from opt_einsum import shared_intermediates
+
+from pyro.distributions.util import broadcast_shape, logsumexp
+
+from pyro.infer.util import is_validation_enabled
+from pyro.ops import stats
+from pyro.ops.contract import contract_to_tensor
+from pyro.ops.integrator import potential_grad
+
 import pyro
 import pyro.poutine as poutine
 from pyro.infer import config_enumerate
@@ -13,6 +30,8 @@ from pyro.poutine.subsample_messenger import _Subsample
 
 from pyro.poutine.util import prune_subsample_sites
 from pyro.util import check_site_shape, ignore_jit_warnings
+
+from pyro.infer.mcmc.util import _PEMaker
 
 
 class TraceTreeEvaluator:
@@ -243,14 +262,14 @@ def _guess_max_plate_nesting(model, args, kwargs):
         model_trace = poutine.trace(model).get_trace(*args, **kwargs)
     sites = [site for site in model_trace.nodes.values() if site["type"] == "sample"]
 
-
-from pyro.infer.mcmc.util import (
-    TraceEinsumEvaluator, 
-    _guess_max_plate_nesting,
-    _PEMaker,
-    _find_valid_initial_params
-)
-
+    dims = [
+        frame.dim
+        for site in sites
+        for frame in site["cond_indep_stack"]
+        if frame.vectorized
+    ]
+    max_plate_nesting = -min(dims) if dims else 0
+    return max_plate_nesting
 
 class _PEMakerScale(_PEMaker):
     def __init__(
@@ -879,7 +898,7 @@ def diagnostics_from_stats(statistics, num_samples, num_chains):
 
     return diag
 
-def observed_inforation(nll_fn, theta):
+def observed_information(nll_fn, theta):
     """Compute the observed information matrix.
 
     The observed information is the Hessian of the negative log likehood.

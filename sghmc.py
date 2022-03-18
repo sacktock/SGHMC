@@ -6,7 +6,7 @@ import pyro.distributions as dist
 from pyro.infer.mcmc.mcmc_kernel import MCMCKernel
 from pyro.ops.integrator import potential_grad
 
-from util import initialize_model, observed_inforation
+from util import initialize_model, observed_information
 from param_tensor_corresponder import ParamTensorCorresponder
 from dual_averaging_step_size import DualAveragingStepSize
 from collections import OrderedDict
@@ -145,7 +145,7 @@ class SGHMC(MCMCKernel):
     def _step_momentum(self, orig, grad):   
         if self.with_friction:
             f = self._sample_friction(f"q_{self._step_count}")
-            return {site:(orig[site] - self.step_size * grad[site] - self.step_size * self.C * orig[site] + f[site]) for site in orig}
+            return {site:(orig[site] - self.step_size * grad[site] - self.step_size * self.friction_term[site] * orig[site] + f[site]) for site in orig}
         else:
             return {site:(orig[site] - self.step_size * grad[site]) for site in orig}
 
@@ -195,7 +195,7 @@ class SGHMC(MCMCKernel):
         def nll_fn_tensor(q_tensor):
             return nll_fn(self.corresponder.to_params(q_tensor))
 
-        return observed_inforation(nll_fn_tensor, q_tensor)
+        return observed_information(nll_fn_tensor, q_tensor)
 
     # Sample the momentum variables from a standard normal
     def _sample_friction(self, sample_name):
@@ -240,7 +240,7 @@ class SGHMC(MCMCKernel):
         self._step_count += 1
 
         # Compute the new potential fn
-        nll_fn, potential_fn = self.get_potential_nll_functions(subsample=True)
+        potential_fn, nll_fn = self.get_potential_nll_functions(subsample=True)
 
         # Position variable
         q = q_current = params
@@ -282,6 +282,12 @@ class SGHMC(MCMCKernel):
             return q
 
     def _compute_accept_prob(self, potential_fn, q_current, p_current, q, p):
+        
+        q_current = self.corresponder.squeeze_params_to_1d(q_current)
+        p_current = self.corresponder.squeeze_params_to_1d(p_current)
+        q = self.corresponder.squeeze_params_to_1d(q)
+        p = self.corresponder.squeeze_params_to_1d(p)
+
         energy_current = (potential_fn(q_current) 
                               + self.kinetic_energy(p_current))
         energy_proposal = potential_fn(q) + self.kinetic_energy(p)

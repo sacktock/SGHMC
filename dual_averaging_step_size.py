@@ -4,7 +4,7 @@ Code taken from this blog post:
 https://colindcarroll.com/2019/04/21/step-size-adaptation-in-hamiltonian-monte-carlo/
 '''
 class DualAveragingStepSize:
-    def __init__(self, initial_step_size, target_accept=0.95, gamma=0.05, t0=10.0, kappa=0.75):
+    def __init__(self, initial_step_size, target_accept=0.75, gamma=0.05, t0=10.0, kappa=0.75):
         self.mu = np.log(10 * initial_step_size)  # proposals are biased upwards to stay away from 0.
         self.target_accept = target_accept
         self.gamma = gamma
