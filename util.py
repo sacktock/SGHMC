@@ -1,28 +1,16 @@
 # Copyright (c) 2017-2019 Uber Technologies, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-import functools
-import traceback as tb
-import warnings
-from collections import OrderedDict, defaultdict
-from functools import partial, reduce
-from itertools import product
-
 import torch
-from opt_einsum import shared_intermediates
 from torch.distributions import biject_to
 from torch.autograd.functional import hessian
 
 import pyro
 import pyro.poutine as poutine
-from pyro.distributions.util import broadcast_shape, logsumexp
 from pyro.infer import config_enumerate
 from pyro.infer.autoguide.initialization import InitMessenger, init_to_uniform
-from pyro.infer.util import is_validation_enabled
-from pyro.ops import stats
-from pyro.ops.contract import contract_to_tensor
-from pyro.ops.integrator import potential_grad
 from pyro.poutine.subsample_messenger import _Subsample
+
 from pyro.poutine.util import prune_subsample_sites
 from pyro.util import check_site_shape, ignore_jit_warnings
 
@@ -255,17 +243,16 @@ def _guess_max_plate_nesting(model, args, kwargs):
         model_trace = poutine.trace(model).get_trace(*args, **kwargs)
     sites = [site for site in model_trace.nodes.values() if site["type"] == "sample"]
 
-    dims = [
-        frame.dim
-        for site in sites
-        for frame in site["cond_indep_stack"]
-        if frame.vectorized
-    ]
-    max_plate_nesting = -min(dims) if dims else 0
-    return max_plate_nesting
+
+from pyro.infer.mcmc.util import (
+    TraceEinsumEvaluator, 
+    _guess_max_plate_nesting,
+    _PEMaker,
+    _find_valid_initial_params
+)
 
 
-class _PEMaker:
+class _PEMakerScale(_PEMaker):
     def __init__(
         self,
         model,
@@ -276,12 +263,13 @@ class _PEMaker:
         observation_nodes,
         scale_likelihood
     ):
-        self.model = model
-        self.model_args = model_args
-        self.model_kwargs = model_kwargs
-        self.trace_prob_evaluator = trace_prob_evaluator
-        self.transforms = transforms
-        self._compiled_fn = None
+        super().__init__(
+            model,
+            model_args,
+            model_kwargs,
+            trace_prob_evaluator,
+            transforms,
+        )
         self.observation_nodes = observation_nodes
         self.scale_likelihood = scale_likelihood
 
@@ -300,6 +288,7 @@ class _PEMaker:
                 t.log_abs_det_jacobian(params_constrained[name], params[name])
             )
         return -log_joint
+
 
     def _nll_fn(self, params):
         params_constrained = {k: self.transforms[k].inv(v) for k, v in params.items()}
@@ -399,7 +388,6 @@ def _find_valid_initial_params(
         "Model specification seems incorrect - cannot find valid initial params."
     )
 
-
 def initialize_model(
     model,
     model_args=(),
@@ -493,7 +481,7 @@ def initialize_model(
 
     observation_nodes = model_trace.observation_nodes
 
-    pe_maker = _PEMaker(
+    pe_maker = _PEMakerScale(
         model, 
         model_args, 
         model_kwargs, 
@@ -528,9 +516,6 @@ def initialize_model(
         return initial_params, potential_fn, nll_fn, transforms, model_trace
     else:
         return initial_params, potential_fn, transforms, model_trace
-
-
-
 
 def _safe(fn):
     """
