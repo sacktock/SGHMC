@@ -20,7 +20,7 @@ class SGHMC(MCMCKernel):
     batch_size : int, default=5
         The size of the minibatches to use
 
-    step_size : int, default=1
+    step_size : int, default 0.1
         The size of a single step taken while simulating Hamiltonian dynamics
 
     num_steps : int, default 10
@@ -36,7 +36,7 @@ class SGHMC(MCMCKernel):
         Do step size adaptation during warm up phase
     """
 
-    def __init__(self, model, subsample_positions=[0], batch_size=5, step_size=1, num_steps=10,
+    def __init__(self, model, subsample_positions=[0], batch_size=5, step_size=0.1, num_steps=10,
                  with_friction=True, do_mh_correction=False, do_step_size_adaptation=True):
         self.model = model
         self.subsample_positions = subsample_positions
@@ -101,20 +101,20 @@ class SGHMC(MCMCKernel):
                  * torch.ones(self.corresponder.total_size))
         return self.corresponder.normal_sample(loc, scale, sample_prefix)
 
-    # Computes orig + step * grad elementwise, where orig and grad are
+    # Computes orig + step * mom elementwise, where orig and mom are
     # dictionaries with the same keys
-    def _step_position(self, orig, step, grad):   
-        return {site:(orig[site] + step * grad[site]) for site in orig}
+    def _step_position(self, orig, mom):   
+        return {site:(orig[site] + self.step_size * mom[site]) for site in orig}
         
     # Computes orig + step * grad elementwise, where orig and grad are
     # dictionaries with the same keys
     # If with_friction adds additional update terms elementwise
-    def _step_momentum(self, orig, step, grad):   
+    def _step_momentum(self, orig, grad):   
         if self.with_friction:
             f = self._sample_friction(f"q_{self._step_count}")
-            return {site:(orig[site] + step * grad[site] - step * self.C * orig[site] + (step / self.step_size) * f[site]) for site in orig}
+            return {site:(orig[site] - self.step_size * grad[site] - self.step_size * self.C * orig[site] + f[site]) for site in orig}
         else:
-            return {site:(orig[site] + step * grad[site]) for site in orig}
+            return {site:(orig[site] - self.step_size * grad[site]) for site in orig}
 
     # Sample the momentum variables from a standard normal
     def sample_momentum(self, sample_prefix):
@@ -151,13 +151,13 @@ class SGHMC(MCMCKernel):
         return potential_fn
 
     # Update the position one step
-    def update_position(self, p, q, potential_fn, step_size):
-        return self._step_position(q, self.step_size, p)
+    def update_position(self, p, q):
+        return self._step_position(q, p)
 
     # Update the momentum one step
-    def update_momentum(self, p, q, potential_fn, step_size):
+    def update_momentum(self, p, q, potential_fn):
         grad_q, _ = potential_grad(potential_fn, q)
-        return self._step_momentum(p, - step_size, grad_q)
+        return self._step_momentum(p, grad_q)
 
     # Compute the kinetic energy, given the momentum
     def kinetic_energy(self, p):
@@ -179,18 +179,10 @@ class SGHMC(MCMCKernel):
         # Resample the momentum
         p = p_current = self.sample_momentum(f"q_{self._step_count}")
 
-        ## Simulate Hamiltonian dynamics using leapfrog method
-        # Half-step momentum
-        p = self.update_momentum(p, q, potential_fn, self.step_size / 2)
-
         # Full-step position and momentum alternately
         for i in range(self.num_steps):
-            q = self.update_position(p, q, potential_fn, self.step_size)
-            if i < self.num_steps - 1:
-                p = self.update_momentum(p, q, potential_fn, self.step_size)
-
-        # Finally half-step momentum
-        p = self.update_momentum(p, q, potential_fn, self.step_size / 2)
+            q = self.update_position(p, q)
+            p = self.update_momentum(p, q, potential_fn)
         
         ## Metropolis-Hastings correction
         if self.do_mh_correction:
