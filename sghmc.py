@@ -6,6 +6,8 @@ from pyro.infer.mcmc.mcmc_kernel import MCMCKernel
 from util import initialize_model
 from pyro.ops.integrator import potential_grad
 from param_tensor_corresponder import ParamTensorCorresponder
+from dual_averaging_step_size import DualAveragingStepSize
+from collections import OrderedDict
 
 class SGHMC(MCMCKernel):
     """Stochastic Gradient Hamiltonian Monte Carlo kernel.
@@ -28,11 +30,14 @@ class SGHMC(MCMCKernel):
         Use friction term when updating momentum
 
     do_mh_correction : bool, default False
-        compute the mh correction term using the whole dataset
+        Compute the mh correction term using the whole dataset
+
+    do_step_size_adaptation : bool, default True
+        Do step size adaptation during warm up phase
     """
 
     def __init__(self, model, subsample_positions=[0], batch_size=5, step_size=1, num_steps=10,
-                 with_friction=True, do_mh_correction=False):
+                 with_friction=True, do_mh_correction=False, do_step_size_adaptation=True):
         self.model = model
         self.subsample_positions = subsample_positions
         self.batch_size = batch_size
@@ -40,12 +45,14 @@ class SGHMC(MCMCKernel):
         self.num_steps = num_steps
         self.do_mh_correction = do_mh_correction
         self.with_friction = with_friction
+        self.do_step_size_adaptation = do_step_size_adaptation
         self._initial_params = None
         self.C = 1
         self.B_hat = 0
         self.corresponder = ParamTensorCorresponder()
-
+        
     def setup(self, warmup_steps, *model_args, **model_kwargs):
+        self._warmup_steps = warmup_steps
 
         # Save positional and keyword arguments
         self.model_args = model_args
@@ -80,6 +87,9 @@ class SGHMC(MCMCKernel):
 
         # Set up the corresponder between parameter dicts and tensors
         self.corresponder.configure(initial_params)
+
+        # Set up the automatic step size adapter
+        self.step_size_adapter = DualAveragingStepSize(self.step_size)
 
         # Set the step counter to 0
         self._step_count = 0
@@ -157,7 +167,6 @@ class SGHMC(MCMCKernel):
         return 0.5 * energy
 
     def sample(self, params):
-
         # Increment the step counter
         self._step_count += 1
 
@@ -198,14 +207,55 @@ class SGHMC(MCMCKernel):
             # Draw a uniform random sample
             rand = pyro.sample(f"rand_{self._step_count}", dist.Uniform(0,1))
 
+            # Update the step size with the step size adapter using the true acceptance prob
+            if self._step_count <= self._warmup_steps and self.do_step_size_adaptation:
+                self._update_step_size_with_acc_prob(accept_prob)
+
             # Accept the new point with probability `accept_prob`
             if rand < accept_prob:
                 return q
             else:
                 return q_current
         else:
+            # Update the step size with the step size adapter using a noisy acceptance prob
+            if self._step_count <= self._warmup_steps and self.do_step_size_adaptation:
+                self._update_step_size(potential_fn, q_current, p_current, q, p)
+
             return q
 
+    # Method to update the step size if we have the acceptance probability handy
+    def _update_step_size_with_acc_prob(self, accept_prob):
+        if self._step_count < self._warmup_steps:
+            step_size, _ = self.step_size_adapter.update(accept_prob)
+        elif self._step_count == self._warmup_steps:
+            _, step_size = self.step_size_adapter.update(accept_prob)
+        
+        self.step_size = step_size
+
+    # Method to update the step size 
+    # First compute the acceptance probability using a given potential fn (can be noisy or not)
+    def _update_step_size(self, potential_fn, q_current, p_current, q, p):
+        energy_current = (potential_fn(q_current) 
+                              + self.kinetic_energy(p_current))
+        energy_proposal = potential_fn(q) + self.kinetic_energy(p)
+
+        # Compute the acceptance probability
+        energy_delta = energy_current - energy_proposal
+        accept_prob = energy_delta.exp().clamp(max=1.0).item()
+            
+        if self._step_count < self._warmup_steps:
+            step_size, _ = self.step_size_adapter.update(accept_prob)
+        elif self._step_count == self._warmup_steps:
+            _, step_size = self.step_size_adapter.update(accept_prob)
+        
+        self.step_size = step_size
+        
+    def logging(self):
+        return OrderedDict(
+            [
+                ("step size", "{:.2e}".format(self.step_size))
+            ]
+        )
 
     @property
     def initial_params(self):
