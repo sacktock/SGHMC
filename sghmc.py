@@ -6,9 +6,7 @@ from pyro.infer.mcmc.mcmc_kernel import MCMCKernel
 from util import initialize_model
 from pyro.ops.integrator import potential_grad
 
-from base import StochasticMCMCKernel
-
-class SGHMC(StochasticMCMCKernel):
+class SGHMC(MCMCKernel):
     """Stochastic Gradient Hamiltonian Monte Carlo kernel.
     
     Parameters
@@ -34,12 +32,12 @@ class SGHMC(StochasticMCMCKernel):
 
     def __init__(self, model, subsample_positions=[0], batch_size=5, step_size=1, num_steps=10,
                  with_friction=True, do_mh_correction=False):
-        super().__init__(model,
-                         subsample_positions,
-                         batch_size,
-                         step_size,
-                         num_steps, 
-                         do_mh_correction)
+        self.model = model
+        self.subsample_positions = subsample_positions
+        self.batch_size = batch_size
+        self.step_size = step_size
+        self.num_steps = num_steps
+        self.do_mh_correction = do_mh_correction
         self.with_friction = with_friction
         self._initial_params = None
         self.C = 1
@@ -75,7 +73,7 @@ class SGHMC(StochasticMCMCKernel):
             initial_params = self._initial_params
         )
         self._initial_params = initial_params
-        self.potential_fn = potential_fn
+        self.full_potential_fn = potential_fn
         self.transforms = transforms
 
         # Compute the dimension of each model parameter
@@ -165,3 +163,62 @@ class SGHMC(StochasticMCMCKernel):
         for site, value in p.items():
             energy += torch.dot(value, value)
         return 0.5 * energy
+
+    def sample(self, params):
+
+        # Increment the step counter
+        self._step_count += 1
+
+        # Compute the new potential fn
+        potential_fn = self.get_potential_fn(subsample=True)
+
+        # Position variable
+        q = q_current = params
+
+        # Resample the momentum
+        p = p_current = self.sample_momentum(f"q_{self._step_count}")
+
+        ## Simulate Hamiltonian dynamics using leapfrog method
+        # Half-step momentum
+        p = self.update_momentum(p, q, potential_fn, self.step_size / 2)
+
+        # Full-step position and momentum alternately
+        for i in range(self.num_steps):
+            q = self.update_position(p, q, potential_fn, self.step_size)
+            if i < self.num_steps - 1:
+                p = self.update_momentum(p, q, potential_fn, self.step_size)
+
+        # Finally half-step momentum
+        p = self.update_momentum(p, q, potential_fn, self.step_size / 2)
+        
+        ## Metropolis-Hastings correction
+        if self.do_mh_correction:
+
+            # Compute the current and proposed total energies
+            energy_current = (self.full_potential_fn(q_current) 
+                              + self.kinetic_energy(p_current))
+            energy_proposal = self.full_potential_fn(q) + self.kinetic_energy(p)
+
+            # Compute the acceptance probability
+            energy_delta = energy_current - energy_proposal
+            accept_prob = energy_delta.exp().clamp(max=1.0).item()
+
+            # Draw a uniform random sample
+            rand = pyro.sample(f"rand_{self._step_count}", dist.Uniform(0,1))
+
+            # Accept the new point with probability `accept_prob`
+            if rand < accept_prob:
+                return q
+            else:
+                return q_current
+        else:
+            return q
+
+
+    @property
+    def initial_params(self):
+        return self._initial_params
+
+    @initial_params.setter
+    def initial_params(self, params):
+        self._initial_params = params
