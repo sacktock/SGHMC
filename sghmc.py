@@ -58,7 +58,8 @@ class SGHMC(MCMCKernel):
     """
 
     def __init__(self, model, subsample_positions=[0], batch_size=5, step_size=0.1, num_steps=10,
-                 with_friction=True, friction_term=None, obs_info_noise=True, do_mh_correction=False, do_step_size_adaptation=True):
+                 with_friction=True, friction_term=None, friction_constant=1.0, obs_info_noise=True, 
+                 do_mh_correction=False, do_step_size_adaptation=True, target_accept=0.8):
       
         self.model = model
         self.subsample_positions = subsample_positions
@@ -67,11 +68,14 @@ class SGHMC(MCMCKernel):
         self.num_steps = num_steps
         self.with_friction = with_friction
         self.friction_term = friction_term
+        self.C = friction_constant if not friction_term else None
         self.obs_info_noise = obs_info_noise
         self.do_mh_correction = do_mh_correction
         self.do_step_size_adaptation = do_step_size_adaptation
+        self.target_accept = target_accept
         self._initial_params = None
         self.corresponder = ParamTensorCorresponder()
+        
         
     def setup(self, warmup_steps, *model_args, **model_kwargs):
         self._warmup_steps = warmup_steps
@@ -114,7 +118,7 @@ class SGHMC(MCMCKernel):
         if self.friction_term is None:
             self.friction_term = {}
             for name, size in self.corresponder.site_sizes.items():
-                self.friction_term[name] = torch.eye(size)
+                self.friction_term[name] = torch.eye(size) * self.C
         self.friction_term_tensor = self.corresponder.to_block_matrix(
             self.friction_term
         )
@@ -123,7 +127,7 @@ class SGHMC(MCMCKernel):
         self.obs_info = None
 
         # Set up the automatic step size adapter
-        self.step_size_adapter = DualAveragingStepSize(self.step_size)
+        self.step_size_adapter = DualAveragingStepSize(self.step_size, target_accept=self.target_accept)
 
         # Set the step counter to 0
         self._step_count = 0

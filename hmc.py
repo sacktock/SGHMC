@@ -6,6 +6,9 @@ from pyro.infer.mcmc.mcmc_kernel import MCMCKernel
 from pyro.infer.mcmc.util import initialize_model
 from pyro.ops.integrator import potential_grad
 
+from dual_averaging_step_size import DualAveragingStepSize
+from collections import OrderedDict
+
 class HMC(MCMCKernel):
     """Hamiltonian Monte Carlo kernel.
     
@@ -20,15 +23,21 @@ class HMC(MCMCKernel):
 
     num_steps
         The number of steps to simulate Hamiltonian dynamics
+
+    do_step_size_adaptation : bool, default True
+        Do step size adaptation during warm up phase
     """
 
-    def __init__(self, model, step_size=1, num_steps=10):
+    def __init__(self, model, step_size=1, num_steps=10, do_step_size_adaptation=True, target_accept=0.8):
         self.model = model
         self.step_size = step_size
         self.num_steps = num_steps
+        self.do_step_size_adaptation = do_step_size_adaptation
+        self.target_accept = target_accept
         self._initial_params = None
 
     def setup(self, warmup_steps, *model_args, **model_kwargs):
+        self._warmup_steps = warmup_steps
 
         # Compute the initial parameter and potential function from the model
         initial_params, potential_fn, transforms, _ = initialize_model(
@@ -45,6 +54,9 @@ class HMC(MCMCKernel):
         for site, values in self._initial_params.items():
             size = values.numel()
             self._param_sizes[site] = size
+
+        # Set up the automatic step size adapter
+        self.step_size_adapter = DualAveragingStepSize(self.step_size, target_accept=self.target_accept)
 
         # Set the step counter to 0
         self._step_count = 0
@@ -109,6 +121,10 @@ class HMC(MCMCKernel):
         energy_delta = energy_current - energy_proposal
         accept_prob = energy_delta.exp().clamp(max=1.0).item()
 
+        # Update the step size with the step size adapter using the true acceptance prob
+        if self._step_count <= self._warmup_steps and self.do_step_size_adaptation:
+            self._update_step_size(accept_prob)
+
         # Draw a uniform random sample
         rand = pyro.sample(f"rand_{self._step_count}", dist.Uniform(0,1))
 
@@ -117,6 +133,22 @@ class HMC(MCMCKernel):
             return q
         else:
             return q_current
+
+    # Method to update the step size if we have the acceptance probability handy
+    def _update_step_size(self, accept_prob):
+        if self._step_count < self._warmup_steps:
+            step_size, _ = self.step_size_adapter.update(accept_prob)
+        elif self._step_count == self._warmup_steps:
+            _, step_size = self.step_size_adapter.update(accept_prob)
+        
+        self.step_size = step_size
+        
+    def logging(self):
+        return OrderedDict(
+            [
+                ("step size", "{:.2e}".format(self.step_size))
+            ]
+        )
 
     @property
     def initial_params(self):
