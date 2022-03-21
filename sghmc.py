@@ -31,6 +31,9 @@ class SGHMC(MCMCKernel):
     with_friction : bool, default=True
         Use friction term when updating momentum
 
+    resample_every_n : int, default 50
+        When to resmaple to momentum (deafult is to resample momentum every 50 samples)
+
     friction_term : dict or None, default=None
         The friction term to use for the Langevin dynamics. This should be a 
         dictionary of square tensors, one for each of the model parameters,
@@ -41,11 +44,20 @@ class SGHMC(MCMCKernel):
     obs_info_noise : bool, default=True
         Use the observed information to estimate the noise model
 
+    compute_obs_info : string, default="every_sample", valid=["start", "every_sample", "every_step"]
+        When to compute the observed information matrix to estimate B hat,
+        - "start" once at the begining using the inital parameters
+        - "every_sample" once at the start of every sampling procedure
+        - "every_step" at every intehration step or when the parameters change
+
     do_mh_correction : bool, default False
         Compute the mh correction term using the whole dataset
         
     do_step_size_adaptation : bool, default True
         Do step size adaptation during warm up phase
+
+    target_accept : float, deafult 0.8
+        Target acceptance ratio for tuning the step size
 
     Limitations
     -----------
@@ -57,19 +69,22 @@ class SGHMC(MCMCKernel):
     another.
     """
 
-    def __init__(self, model, subsample_positions=[0], batch_size=5, step_size=0.1, num_steps=10,
-                 with_friction=True, friction_term=None, friction_constant=1.0, obs_info_noise=True, 
-                 do_mh_correction=False, do_step_size_adaptation=True, target_accept=0.8):
+    def __init__(self, model, subsample_positions=[0], batch_size=5, step_size=0.1, num_steps=10, 
+                 resample_every_n=50, with_friction=True, friction_term=None, friction_constant=1.0, 
+                 obs_info_noise=True, compute_obs_info='every_sample', do_mh_correction=False, 
+                 do_step_size_adaptation=True, target_accept=0.8):
       
         self.model = model
         self.subsample_positions = subsample_positions
         self.batch_size = batch_size
         self.step_size = step_size
         self.num_steps = num_steps
+        self.resample_every_n = resample_every_n
         self.with_friction = with_friction
         self.friction_term = friction_term
         self.C = friction_constant if not friction_term else None
         self.obs_info_noise = obs_info_noise
+        self.compute_obs_info = compute_obs_info
         self.do_mh_correction = do_mh_correction
         self.do_step_size_adaptation = do_step_size_adaptation
         self.target_accept = target_accept
@@ -98,21 +113,46 @@ class SGHMC(MCMCKernel):
                 raise RuntimeError("Positional argument {} is not a pytorch tensor with size attribute".format(pos))
             except AssertionError:
                 raise RuntimeError("Can't subsample arguments with different lengths")
+
+        # Check compute_obs_info is valid
+        try:
+            assert self.compute_obs_info in ["start", "every_sample", "every_step"]
+        except AssertionError:
+            raise RuntimeError("Invalid input for compute_obs_info "+str(self.compute_obs_info))
                 
         # Compute the initial parameter and potential function from the model
         # Use entire dataset to find initial parameters using pyros in-built search    
-        initial_params, potential_fn, transforms, _ = initialize_model(
-            self.model,
-            self.model_args,
-            self.model_kwargs,
-            initial_params = self._initial_params
-        )
+        if self.compute_obs_info == "start":
+            # We need the nll_fn if we want to compute obs info right now
+            initial_params, potential_fn, nll_fn, transforms, _ = initialize_model(
+                self.model,
+                self.model_args,
+                self.model_kwargs,
+                initial_params=self._initial_params,
+                return_nll_fn=True
+            )
+        else:
+            initial_params, potential_fn, transforms, _ = initialize_model(
+                self.model,
+                self.model_args,
+                self.model_kwargs,
+                initial_params = self._initial_params
+            )
+
+        # Cache variables
         self._initial_params = initial_params
         self.full_potential_fn = potential_fn
         self.transforms = transforms
 
         # Set up the corresponder between parameter dicts and tensors
         self.corresponder.configure(initial_params)
+
+        if self.compute_obs_info == "start":
+            # Compute obs_info once using initial parameters
+            self.obs_info = self.compute_observed_information(initial_params, nll_fn)
+        else:
+            # Set up the obs_info variable
+            self.obs_info = None
 
         # Compute the friction term as a parameter dict and a block matrix
         if self.friction_term is None:
@@ -123,20 +163,11 @@ class SGHMC(MCMCKernel):
             self.friction_term
         )
         
-        # Set up the obs_info variable
-        self.obs_info = None
-
         # Set up the automatic step size adapter
         self.step_size_adapter = DualAveragingStepSize(self.step_size, target_accept=self.target_accept)
 
         # Set the step counter to 0
         self._step_count = 0
-
-    '''def _sample_friction(self, sample_prefix):
-        loc = torch.zeros(self.corresponder.total_size)
-        scale = (2 * (self.C - self.B_hat) * self.step_size 
-                 * torch.ones(self.corresponder.total_size))
-        return self.corresponder.normal_sample(loc, scale, sample_prefix)'''
 
     # Computes orig + step * mom elementwise, where orig and mom are
     # dictionaries with the same keys
@@ -250,15 +281,25 @@ class SGHMC(MCMCKernel):
         q = q_current = params
 
         # Resample the momentum
-        p = p_current = self.sample_momentum(f"q_{self._step_count}")
+        if not ((self._step_count - 1) % self.resample_every_n):
+            p = p_current = self.sample_momentum(f"q_{self._step_count}")
+        else:
+            p = p_current = self._p_current
 
-        if self.obs_info_noise:
+        # Compute obs info at the start of a new sample
+        if self.obs_info_noise and self.compute_obs_info == "every_sample":
             self.obs_info = self.compute_observed_information(q, nll_fn)
 
         # Full-step position and momentum alternately
         for i in range(self.num_steps):
+            # Compute obs info evey leapfrog step
+            if self.obs_info_noise and self.compute_obs_info == "every_step":
+                self.obs_info = self.compute_observed_information(q, nll_fn)
             q = self.update_position(p, q)
             p = self.update_momentum(p, q, potential_fn)
+
+        # Cache current momentum 
+        self._p_current = p
         
         ## Metropolis-Hastings correction
         if self.do_mh_correction:
@@ -286,7 +327,7 @@ class SGHMC(MCMCKernel):
             return q
 
     def _compute_accept_prob(self, potential_fn, q_current, p_current, q, p):
-        
+        # squeeze params to 1d tensors
         q_current = self.corresponder.squeeze_params_to_1d(q_current)
         p_current = self.corresponder.squeeze_params_to_1d(p_current)
         q = self.corresponder.squeeze_params_to_1d(q)
