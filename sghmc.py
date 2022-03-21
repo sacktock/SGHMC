@@ -64,9 +64,11 @@ class SGHMC(MCMCKernel):
 
     - `friction_term` must be constant, and can't vary according to the values
     of the parameters.
-    - `friction_term` yeilds a block matrix: friction is applied independently
+    - `friction_term` yields a block matrix: friction is applied independently
     to each parameter. One parameter's values can't affect the friction on
     another.
+    - The observed information is computed only once per sample, and is not
+    updated while simulating the dynamics.
     """
 
     def __init__(self, model, subsample_positions=[0], batch_size=5, step_size=0.1, num_steps=10, 
