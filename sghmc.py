@@ -1,6 +1,8 @@
 from numpy import corrcoef
 import torch
 
+import numpy as np
+
 import pyro
 import pyro.distributions as dist
 from pyro.infer.mcmc.mcmc_kernel import MCMCKernel
@@ -156,6 +158,8 @@ class SGHMC(MCMCKernel):
             # Set up the obs_info variable
             self.obs_info = None
 
+        self._obs_info_arr = []
+
         # Compute the friction term as a parameter dict and a block matrix
         if self.friction_term is None:
             self.friction_term = {}
@@ -289,13 +293,15 @@ class SGHMC(MCMCKernel):
             p = p_current = self._p_current
 
         # Compute obs info at the start of a new sample
-        if self.obs_info_noise and self.compute_obs_info == "every_sample":
+        if self.obs_info_noise and self.compute_obs_info in ["every_step", "every_sample"]:
             self.obs_info = self.compute_observed_information(q, nll_fn)
+
+        self._obs_info_arr += [self.obs_info]
 
         # Full-step position and momentum alternately
         for i in range(self.num_steps):
             # Compute obs info evey leapfrog step
-            if self.obs_info_noise and self.compute_obs_info == "every_step":
+            if self.obs_info_noise and self.compute_obs_info == "every_step" and i > 0:
                 self.obs_info = self.compute_observed_information(q, nll_fn)
             q = self.update_position(p, q)
             p = self.update_momentum(p, q, potential_fn)
@@ -327,6 +333,9 @@ class SGHMC(MCMCKernel):
                 self._update_step_size(accept_prob)
 
             return q
+
+    def get_obs_info_arr(self):
+        return np.array(self._obs_info_arr)
 
     def _compute_accept_prob(self, potential_fn, q_current, p_current, q, p):
         # squeeze params to 1d tensors
