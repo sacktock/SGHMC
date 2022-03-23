@@ -73,10 +73,21 @@ class SGHMC(MCMCKernel):
     updated while simulating the dynamics.
     """
 
-    def __init__(self, model, subsample_positions=[0], batch_size=5, step_size=0.1, num_steps=10, 
-                 resample_every_n=50, with_friction=True, friction_term=None, friction_constant=1.0, 
-                 obs_info_noise=True, compute_obs_info='every_sample', do_mh_correction=False, 
-                 do_step_size_adaptation=True, target_accept=0.8):
+    def __init__(self, 
+                 model, 
+                 subsample_positions=[0], 
+                 batch_size=5, 
+                 step_size=0.1, 
+                 num_steps=10, 
+                 resample_every_n=50, 
+                 with_friction=True, 
+                 friction_term=None, 
+                 friction_constant=1.0, 
+                 obs_info_noise=True, 
+                 compute_obs_info='every_sample', 
+                 do_mh_correction=False, 
+                 do_step_size_adaptation=False, 
+                 target_accept=0.8):
       
         self.model = model
         self.subsample_positions = subsample_positions
@@ -161,16 +172,18 @@ class SGHMC(MCMCKernel):
         self._obs_info_arr = []
 
         # Compute the friction term as a parameter dict and a block matrix
-        if self.friction_term is None:
-            self.friction_term = {}
-            for name, size in self.corresponder.site_sizes.items():
-                self.friction_term[name] = torch.eye(size) * self.C
-        self.friction_term_tensor = self.corresponder.to_block_matrix(
-            self.friction_term
-        )
+        if self.with_friction:
+            if self.friction_term is None:
+                self.friction_term = {}
+                for name, size in self.corresponder.site_sizes.items():
+                    self.friction_term[name] = torch.eye(size) * self.C
+            self.friction_term_tensor = self.corresponder.to_block_matrix(
+                self.friction_term
+            )
         
         # Set up the automatic step size adapter
-        self.step_size_adapter = DualAveragingStepSize(self.step_size, target_accept=self.target_accept)
+        if self.do_step_size_adaptation:
+            self.step_size_adapter = DualAveragingStepSize(self.step_size, target_accept=self.target_accept)
 
         # Set the step counter to 0
         self._step_count = 0
@@ -185,7 +198,7 @@ class SGHMC(MCMCKernel):
     # If with_friction adds additional update terms elementwise
     def _step_momentum(self, orig, grad):   
         if self.with_friction:
-            f = self._sample_friction(f"q_{self._step_count}")
+            f = self._sample_friction(f"f_{self._step_count}")
             return {site:(orig[site] - self.step_size * grad[site] - self.step_size * self.friction_term[site] * orig[site] + f[site]) for site in orig}
         else:
             return {site:(orig[site] - self.step_size * grad[site]) for site in orig}
@@ -288,21 +301,21 @@ class SGHMC(MCMCKernel):
 
         # Resample the momentum
         if not ((self._step_count - 1) % self.resample_every_n):
-            p = p_current = self.sample_momentum(f"q_{self._step_count}")
+            p = p_current = self.sample_momentum(f"p_{self._step_count}")
         else:
             p = p_current = self._p_current
 
         # Compute obs info at the start of a new sample
         if self.obs_info_noise and self.compute_obs_info in ["every_step", "every_sample"]:
             self.obs_info = self.compute_observed_information(q, nll_fn)
-
-        self._obs_info_arr += [self.obs_info]
+            self._obs_info_arr += [self.obs_info]
 
         # Full-step position and momentum alternately
         for i in range(self.num_steps):
             # Compute obs info evey leapfrog step
             if self.obs_info_noise and self.compute_obs_info == "every_step" and i > 0:
                 self.obs_info = self.compute_observed_information(q, nll_fn)
+                self._obs_info_arr += [self.obs_info]
             q = self.update_position(p, q)
             p = self.update_momentum(p, q, potential_fn)
 
