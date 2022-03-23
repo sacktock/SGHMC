@@ -1,14 +1,14 @@
+import sys
+sys.path.append("..")
 
 import torch
-
 import numpy as np
-
 import pyro
 import pyro.distributions as dist
 from pyro.infer.mcmc.mcmc_kernel import MCMCKernel
 from pyro.ops.integrator import potential_grad
-from util import initialize_model
-from param_tensor_corresponder import ParamTensorCorresponder
+from kernel.utils.main import initialize_model
+from kernel.utils.param_tensor_corresponder import ParamTensorCorresponder
 from collections import OrderedDict
 
 class SGD(MCMCKernel):

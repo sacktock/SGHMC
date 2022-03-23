@@ -2,15 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from collections import namedtuple
-
 import pyro
 import torch
 import pyro.distributions as dist
 from pyro.distributions.util import scalar_like
-from sghmc_for_NUTS import SGHMC_for_NUTS
+from kernel.abstract.sgnuts_kernel import SGHMC_for_NUTS
 from pyro.ops.integrator import potential_grad
 from pyro.util import optional, torch_isnan
-
 
 def _logaddexp(x, y):
     minval, maxval = (x, y) if x < y else (y, x)
@@ -156,7 +154,7 @@ class NUTS(SGHMC_for_NUTS):
 
     def __init__(
         self,
-        model
+        model,
         subsample_positions=[0],
         batch_size=5,
         potential_fn=None,

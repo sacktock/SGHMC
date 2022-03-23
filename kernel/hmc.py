@@ -1,12 +1,13 @@
-import torch
+import sys
+sys.path.append("..")
 
+import torch
 import pyro
 import pyro.distributions as dist
 from pyro.infer.mcmc.mcmc_kernel import MCMCKernel
 from pyro.infer.mcmc.util import initialize_model
 from pyro.ops.integrator import potential_grad
-
-from dual_averaging_step_size import DualAveragingStepSize
+from kernel.utils.dual_averaging_step_size import DualAveragingStepSize
 from collections import OrderedDict
 
 class HMC(MCMCKernel):

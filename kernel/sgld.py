@@ -1,5 +1,7 @@
+import sys
+sys.path.append("..")
 
-from sghmc import SGHMC
+from kernel.sghmc import SGHMC
 from pyro.ops.integrator import potential_grad
 import torch
 import numpy as np
