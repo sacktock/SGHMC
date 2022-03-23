@@ -19,7 +19,7 @@ class SGLD(SGHMC):
         The size of the minibatches to use
 
     step_size : int, default 0.1
-        The size of a single step taken while simulating Hamiltonian dynamics
+        The size of a single step taken during sampling
 
     num_steps : int, default 10
         The number of steps to simulate Hamiltonian dynamics

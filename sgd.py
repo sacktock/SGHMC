@@ -23,10 +23,13 @@ class SGD(MCMCKernel):
         The size of the minibatches to use
 
     step_size : int, default 0.1
-        The size of a single step taken while simulating Hamiltonian dynamics
+        Analagous to learning rate
 
     num_steps : int, default 1
         The number of steps to simulate Hamiltonian dynamics
+
+    weight_decay: float, default 0.0
+        L2 weight penalisation
 
     with_momentum : bool, default=False
         Use Nesterov's momentum during parameter updates
@@ -41,6 +44,7 @@ class SGD(MCMCKernel):
                  batch_size=5, 
                  step_size=0.1, 
                  num_steps=1,
+                 weight_decay=0.0,
                  with_momentum=True,
                  alpha=0.75):
 
@@ -49,6 +53,7 @@ class SGD(MCMCKernel):
         self.batch_size = batch_size
         self.step_size = step_size
         self.num_steps = num_steps
+        self.weight_decay = weight_decay
         self.with_momentum = with_momentum
         self._initial_params = None
         self.corresponder = ParamTensorCorresponder()
@@ -110,9 +115,15 @@ class SGD(MCMCKernel):
     def _step_momentum(self, orig, grad):
         return {site : (orig[site] * self.alpha - self.step_size * grad[site]) for site in orig}
 
+    def _add_weight_decay(self, grad, x):
+        return {site : (grad[site] + self.weight_decay * x[site]) for site in grad}
+
     def update_momentum(self, v, x, potential_fn):
         x_tilde = {site : (x[site] + self.alpha * v[site]) for site in x}
         grad, _  = potential_grad(potential_fn, x_tilde)
+        if self.weight_decay != 0.0:
+            grad = self._add_weight_decay(grad, x_tilde)
+
         return self._step_momentum(v, grad)
 
     def get_potential_fn(self, subsample=True):
