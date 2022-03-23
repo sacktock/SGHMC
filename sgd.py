@@ -25,9 +25,6 @@ class SGD(MCMCKernel):
     step_size : int, default 0.1
         Analagous to learning rate
 
-    num_steps : int, default 1
-        The number of steps to simulate Hamiltonian dynamics
-
     weight_decay: float, default 0.0
         L2 weight penalisation
 
@@ -43,7 +40,6 @@ class SGD(MCMCKernel):
                  subsample_positions=[0], 
                  batch_size=5, 
                  step_size=0.1, 
-                 num_steps=1,
                  weight_decay=0.0,
                  with_momentum=True,
                  alpha=0.75):
@@ -52,7 +48,6 @@ class SGD(MCMCKernel):
         self.subsample_positions = subsample_positions
         self.batch_size = batch_size
         self.step_size = step_size
-        self.num_steps = num_steps
         self.weight_decay = weight_decay
         self.with_momentum = with_momentum
         self._initial_params = None
@@ -102,28 +97,32 @@ class SGD(MCMCKernel):
         self.full_potential_fn = potential_fn
         self.transforms = transforms
 
-        self._momentum = self.corresponder.to_params(torch.zeros(self.corresponder.total_size))
+        self._momentum = None
 
         self._step_count = 0
 
-    def _step_position(self, orig, targ):   
-        return {site:(orig[site] + targ[site]) for site in orig}
+    def _step_position(self, x, grad):   
+        return {site:(x[site] - self.step_size * grad[site]) for site in x}
 
-    def update_position(self, x, v):
-        return self._step_position(x, v)
+    def update_position(self, x, grad):
+        return self._step_position(x, grad)
+
+    def _step_grad(self, grad, v):
+        return {site:(grad[site] + v[site]) for site in grad}
+
+    def update_grad(self, grad, v):
+        return self._step_grad(grad, v)
 
     def _step_momentum(self, orig, grad):
-        return {site : (orig[site] * self.alpha - self.step_size * grad[site]) for site in orig}
+        if self._momentum is not None: 
+            return {site : (orig[site] + (1 - self.alpha) * grad[site]) for site in orig}
+        else:
+            return {site : (orig[site] +  grad[site]) for site in orig}
 
     def _add_weight_decay(self, grad, x):
         return {site : (grad[site] + self.weight_decay * x[site]) for site in grad}
 
-    def update_momentum(self, v, x, potential_fn):
-        x_tilde = {site : (x[site] + self.alpha * v[site]) for site in x}
-        grad, _  = potential_grad(potential_fn, x_tilde)
-        if self.weight_decay != 0.0:
-            grad = self._add_weight_decay(grad, x_tilde)
-
+    def update_momentum(self, v, grad):
         return self._step_momentum(v, grad)
 
     def get_potential_fn(self, subsample=True):
@@ -164,17 +163,22 @@ class SGD(MCMCKernel):
 
         # Position variable
         x = params
-        v = self._momentum
         
-        for i in range(self.num_steps):
-            if self.with_momentum:
-                # Compute Nesterov momentum: v = self.alpha * v - self.step_size * grad_(x + self.alpha * v)
-                v = self.update_momentum(v, x, potential_fn)
-            else:
-                # Compute v = - self.step_size * grad_x
-                v = self.update_momentum(self._momentum, x, potential_fn)
-            # Step position using momentum: x = x + v
-            x = self.update_position(x, v)
+        grad, _  = potential_grad(potential_fn, x)
+        if self.weight_decay != 0.0:
+            grad = self._add_weight_decay(grad, x)
+
+        if self._momentum is not None:
+            v = self._momentum
+        else:
+            v = self._momentum = self.corresponder.to_params(torch.zeros(self.corresponder.total_size))
+
+        if self.with_momentum:
+            v = self.update_momentum(v, grad)
+            grad = self.update_grad(grad, v)
+
+        # Step position using momentum: x = x + v
+        x = self.update_position(x, grad)
 
         # Cache momentum
         if self.with_momentum:
