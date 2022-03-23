@@ -25,21 +25,24 @@ class SGD(MCMCKernel):
     step_size : int, default 0.1
         The size of a single step taken while simulating Hamiltonian dynamics
 
-    num_steps : int, default 10
+    num_steps : int, default 1
         The number of steps to simulate Hamiltonian dynamics
 
     with_momentum : bool, default=False
         Use Nesterov's momentum during parameter updates
+
+    alpha : float, default=True
+        Momentum hyperparameter indicting how much to weight momentum in favor of gradient
     """
-    # TODO implement Nesterov's momemtum for SGD
 
     def __init__(self,
                  model, 
                  subsample_positions=[0], 
                  batch_size=5, 
                  step_size=0.1, 
-                 num_steps=10,
-                 with_momentum=False):
+                 num_steps=1,
+                 with_momentum=True,
+                 alpha=0.75):
 
         self.model = model
         self.subsample_positions = subsample_positions
@@ -49,6 +52,7 @@ class SGD(MCMCKernel):
         self.with_momentum = with_momentum
         self._initial_params = None
         self.corresponder = ParamTensorCorresponder()
+        self.alpha = alpha
 
     def setup(self, warmup_steps, *model_args, **model_kwargs):
 
@@ -93,14 +97,23 @@ class SGD(MCMCKernel):
         self.full_potential_fn = potential_fn
         self.transforms = transforms
 
+        self._momentum = self.corresponder.to_params(torch.zeros(self.corresponder.total_size))
+
         self._step_count = 0
 
-    def _step_position(self, orig, grad):   
-        return {site:(orig[site] - self.step_size * grad[site]) for site in orig}
+    def _step_position(self, orig, targ):   
+        return {site:(orig[site] + targ[site]) for site in orig}
 
-    def update_position(self, x, potential_fn):
-        grad_x, _  = potential_grad(potential_fn, x)
-        return self._step_position(x, grad_x)
+    def update_position(self, x, v):
+        return self._step_position(x, v)
+
+    def _step_momentum(self, orig, grad):
+        return {site : (orig[site] * self.alpha - self.step_size * grad[site]) for site in orig}
+
+    def update_momentum(self, v, x, potential_fn):
+        x_tilde = {site : (x[site] + self.alpha * v[site]) for site in x}
+        grad, _  = potential_grad(potential_fn, x_tilde)
+        return self._step_momentum(v, grad)
 
     def get_potential_fn(self, subsample=True):
         if subsample:
@@ -140,10 +153,21 @@ class SGD(MCMCKernel):
 
         # Position variable
         x = params
+        v = self._momentum
         
         for i in range(self.num_steps):
-            # Step position using gradient
-            x = self.update_position(x, potential_fn)
+            if self.with_momentum:
+                # Compute Nesterov momentum: v = self.alpha * v - self.step_size * grad_(x + self.alpha * v)
+                v = self.update_momentum(v, x, potential_fn)
+            else:
+                # Compute v = - self.step_size * grad_x
+                v = self.update_momentum(self._momentum, x, potential_fn)
+            # Step position using momentum: x = x + v
+            x = self.update_position(x, v)
+
+        # Cache momentum
+        if self.with_momentum:
+            self._momentum = v
 
         return x
 

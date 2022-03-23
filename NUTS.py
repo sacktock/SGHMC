@@ -156,7 +156,7 @@ class NUTS(SGHMC_for_NUTS):
 
     def __init__(
         self,
-        model=None,
+        model
         subsample_positions=[0],
         batch_size=5,
         potential_fn=None,
