@@ -41,7 +41,7 @@ class ParamTensorCorresponder():
             block_list.append(params[name].detach())
         return torch.block_diag(*block_list)
 
-    def squeeze_params_to_1d(self, params):
+    def wrap(self, params):
         """removes all dimensions with size 1 from dictionary of parameters apart from the first dimension"""
         for name in self._site_names:
             params[name] = params[name].squeeze().unsqueeze(0)

@@ -10,7 +10,7 @@ from kernel.utils.main import initialize_model
 from kernel.utils.param_tensor_corresponder import ParamTensorCorresponder
 from kernel.utils.dual_averaging_step_size import DualAveragingStepSize
 
-from kernel.sghmc import SGHMC
+from kernel.legacy.sghmc import SGHMC
 
 class SGHMC_for_NUTS(SGHMC):
     """Stochastic Gradient Hamiltonian Monte Carlo kernel implementation for NUTS.

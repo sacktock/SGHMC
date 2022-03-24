@@ -39,20 +39,20 @@ class SGD(MCMCKernel):
                  model, 
                  subsample_positions=[0], 
                  batch_size=5, 
-                 step_size=0.1, 
+                 learning_rate=0.1, 
                  weight_decay=0.0,
                  with_momentum=True,
-                 alpha=0.75):
+                 momentum_decay=0.75):
 
         self.model = model
         self.subsample_positions = subsample_positions
         self.batch_size = batch_size
-        self.step_size = step_size
+        self.learning_rate = learning_rate
         self.weight_decay = weight_decay
         self.with_momentum = with_momentum
         self._initial_params = None
         self.corresponder = ParamTensorCorresponder()
-        self.alpha = alpha
+        self.momentum_decay = momentum_decay
 
     def setup(self, warmup_steps, *model_args, **model_kwargs):
 
@@ -87,10 +87,10 @@ class SGD(MCMCKernel):
         self.corresponder.configure(initial_params)
 
         # Initialise random parameters
-        loc = torch.zeros(self.corresponder.total_size)
-        scale = torch.ones(self.corresponder.total_size)
-        initial_params = pyro.sample('initial_params', dist.Normal(loc, scale))
-        initial_params = self.corresponder.to_params(initial_params)
+        #loc = torch.zeros(self.corresponder.total_size)
+        #scale = torch.ones(self.corresponder.total_size)
+        #initial_params = pyro.sample('initial_params', dist.Normal(loc, scale))
+        #initial_params = self.corresponder.to_params(initial_params)
 
         # Cache variables
         self._initial_params = initial_params
@@ -102,22 +102,22 @@ class SGD(MCMCKernel):
         self._step_count = 0
 
     def _step_position(self, x, grad):   
-        return {site:(x[site] - self.step_size * grad[site]) for site in x}
+        return {site:(x[site] - self.learning_rate * grad[site]) for site in x}
 
     def update_position(self, x, grad):
         return self._step_position(x, grad)
 
     def _step_grad(self, grad, v):
-        return {site:(grad[site] + v[site]) for site in grad}
+        return {site:(grad[site] + v[site].view(grad[site].shape)) for site in grad}
 
     def update_grad(self, grad, v):
         return self._step_grad(grad, v)
 
     def _step_momentum(self, orig, grad):
         if self._momentum is not None: 
-            return {site : (orig[site] + (1 - self.alpha) * grad[site]) for site in orig}
+            return {site : (orig[site].view(grad[site].shape) + (1 - self.momentum_decay) * grad[site]) for site in orig}
         else:
-            return {site : (orig[site] +  grad[site]) for site in orig}
+            return {site : (orig[site].view(grad[site].shape) +  grad[site]) for site in orig}
 
     def _add_weight_decay(self, grad, x):
         return {site : (grad[site] + self.weight_decay * x[site]) for site in grad}
@@ -189,7 +189,7 @@ class SGD(MCMCKernel):
     def logging(self):
         return OrderedDict(
             [
-                ("learning rate", "{:.2e}".format(self.step_size))
+                ("lr", "{:.2e}".format(self.learning_rate))
             ]
         )
 

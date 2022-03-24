@@ -20,16 +20,19 @@ class SGLD(SGHMC):
     batch_size : int, default=5
         The size of the minibatches to use
 
-    step_size : int, default 0.1
+    learning_rate : int, default 0.1
         The size of a single step taken during sampling
+
+    noise_rate : float, default sqrt(0.1)
+        The scale of noise added to the gradient, ideally keep it at roughly the square root of the learning rate
 
     num_steps : int, default 10
         The number of steps to simulate Hamiltonian dynamics
 
-    obs_info_noise : bool, default=True
+    obs_info_noise : bool, default=False
         Use the observed information to estimate the noise model
 
-    compute_obs_info : string, default="every_sample", valid=["start", "every_sample", "every_step"]
+    compute_obs_info : string, default=None, valid=["start", "every_sample", "every_step", None]
         When to compute the observed information matrix to estimate B hat,
         - "start" once at the begining using the inital parameters
         - "every_sample" once at the start of every sampling procedure
@@ -40,19 +43,21 @@ class SGLD(SGHMC):
                  model, 
                  subsample_positions=[0], 
                  batch_size=5, 
-                 step_size=0.1, 
+                 learning_rate=0.1, 
+                 noise_rate=np.sqrt(0.1),
                  num_steps=10, 
-                 obs_info_noise=True, 
-                 compute_obs_info='every_sample'):
+                 obs_info_noise=False, 
+                 compute_obs_info=None):
 
         super().__init__(model, 
                          subsample_positions=subsample_positions, 
                          batch_size=batch_size, 
-                         step_size=step_size, 
+                         learning_rate=learning_rate, 
                          num_steps=num_steps, 
-                         with_friction=False,
                          obs_info_noise=obs_info_noise, 
                          compute_obs_info=compute_obs_info)
+
+        self.noise_rate = noise_rate
 
     def setup(self, warmup_steps, *model_args, **model_kwargs):
         super().setup(warmup_steps, *model_args, **model_kwargs)
@@ -60,21 +65,21 @@ class SGLD(SGHMC):
     # Computes orig + step *grad + noise elementwise, where orig, grad and noise are
     # dictionaries with the same keys
     def _step_position(self, orig, grad, noise):   
-        return {site:(orig[site] - self.step_size * grad[site] + noise[site]) for site in orig}
+        return {site:(orig[site] - self.learning_rate * grad[site] + noise[site].view(orig[site].shape)) for site in orig}
 
     def _sample_noise(self, sample_name):
         if self.obs_info_noise:
-            noise_term = 0.5 * self.step_size * self.obs_info
+            noise_term = 0.5 * self.noise_rate * self.obs_info
+            loc = torch.zeros(self.corresponder.total_size)
+            cov = torch.eye(self.corresponder.total_size)
+            sample = pyro.sample(sample_name, dist.MultivariateNormal(loc, cov))
         else:
-            noise_term = self.step_size
-
-        loc = torch.zeros(self.corresponder.total_size)
-        cov = torch.eye(self.corresponder.total_size) * noise_term
-
-        sample = pyro.sample(sample_name, dist.MultivariateNormal(loc, cov))
+            noise_term = self.noise_rate
+            loc = torch.zeros(self.corresponder.total_size)
+            scale = torch.ones(self.corresponder.total_size)  * noise_term
+            sample = pyro.sample(sample_name, dist.Normal(loc, scale))
 
         return self.corresponder.to_params(sample)
-
 
     def update_position(self, x, potential_fn):
         grad_x, _  = potential_grad(potential_fn, x)
@@ -92,16 +97,14 @@ class SGLD(SGHMC):
         x = params
 
         # Compute obs info at the start of a new sample
-        if self.obs_info_noise and self.compute_obs_info in ["every_step", "every_sample"]:
+        if self.obs_info_noise and self.compute_obs_info == "every_sample":
             self.obs_info = self.compute_observed_information(x, nll_fn)
-            self._obs_info_arr += [self.obs_info]
 
         for i in range(self.num_steps):
             # Compute obs info evey step
-            if self.obs_info_noise and self.compute_obs_info == "every_step" and i > 0:
+            if self.obs_info_noise and self.compute_obs_info == "every_step":
                 self.obs_info = self.compute_observed_information(x, nll_fn)
-                self._obs_info_arr += [self.obs_info]
-            # Step position variable using gradient plus Langevin noise
+            # Step position variable using gradient plus Langevin dynamics
             x = self.update_position(x, potential_fn)
 
         return x
@@ -109,7 +112,7 @@ class SGLD(SGHMC):
     def logging(self):
         return OrderedDict(
             [
-                ("step size", "{:.2e}".format(self.step_size))
+                ("lr", "{:.2e}".format(self.learning_rate))
             ]
         )
 
