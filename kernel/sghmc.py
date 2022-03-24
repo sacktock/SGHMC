@@ -43,10 +43,10 @@ class SGHMC(MCMCKernel):
         parameter. The default is to use identity matrices for each
         parameter.
 
-    obs_info_noise : bool, default=True
+    obs_info_noise : bool, default=False
         Use the observed information to estimate the noise model
 
-    compute_obs_info : string, default="every_sample", valid=["start", "every_sample", "every_step"]
+    compute_obs_info : string, default=None valid=["start", "every_sample", "every_step", None]
         When to compute the observed information matrix to estimate B hat,
         - "start" once at the begining using the inital parameters
         - "every_sample" once at the start of every sampling procedure
@@ -83,8 +83,8 @@ class SGHMC(MCMCKernel):
                  with_friction=True, 
                  friction_term=None, 
                  friction_constant=1.0, 
-                 obs_info_noise=True, 
-                 compute_obs_info='every_sample', 
+                 obs_info_noise=False, 
+                 compute_obs_info=None, 
                  do_mh_correction=False, 
                  do_step_size_adaptation=False, 
                  target_accept=0.8):
@@ -131,13 +131,13 @@ class SGHMC(MCMCKernel):
 
         # Check compute_obs_info is valid
         try:
-            assert self.compute_obs_info in ["start", "every_sample", "every_step"]
+            assert self.compute_obs_info in ["start", "every_sample", "every_step", None]
         except AssertionError:
             raise RuntimeError("Invalid input for compute_obs_info "+str(self.compute_obs_info))
                 
         # Compute the initial parameter and potential function from the model
         # Use entire dataset to find initial parameters using pyros in-built search    
-        if self.compute_obs_info == "start":
+        if self.compute_obs_info == "start" and self.compute_obs_info:
             # We need the nll_fn if we want to compute obs info right now
             initial_params, potential_fn, nll_fn, transforms, _ = initialize_model(
                 self.model,
@@ -228,16 +228,27 @@ class SGHMC(MCMCKernel):
         else:
             batch_size = self.data_size
             model_args = self.model_args
-            
-        _, potential_fn, nll_fn, _, _ = initialize_model(
-            self.model,
-            model_args,
-            self.model_kwargs,
-            initial_params=self._initial_params,
-            scale_likelihood=self.data_size/batch_size,
-            return_nll_fn=True
-        )
-        return potential_fn, nll_fn
+        
+        if self.obs_info_noise:
+            _, potential_fn, nll_fn, _, _ = initialize_model(
+                self.model,
+                model_args,
+                self.model_kwargs,
+                initial_params=self._initial_params,
+                scale_likelihood=self.data_size/batch_size,
+                return_nll_fn=True
+            )
+            return potential_fn, nll_fn
+        else:
+            _, potential_fn, _, _ = initialize_model(
+                self.model,
+                model_args,
+                self.model_kwargs,
+                initial_params=self._initial_params,
+                scale_likelihood=self.data_size/batch_size,
+            )
+            return potential_fn, None
+
 
     def compute_observed_information(self, q, nll_fn):
         """Compute the observed information at position `q`."""
