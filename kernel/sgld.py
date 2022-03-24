@@ -23,9 +23,6 @@ class SGLD(SGHMC):
     learning_rate : int, default 0.1
         The size of a single step taken during sampling
 
-    noise_rate : float, default sqrt(0.1)
-        The scale of noise added to the gradient, ideally keep it at roughly the square root of the learning rate
-
     num_steps : int, default 10
         The number of steps to simulate Hamiltonian dynamics
 
@@ -44,11 +41,11 @@ class SGLD(SGHMC):
                  subsample_positions=[0], 
                  batch_size=5, 
                  learning_rate=0.1, 
-                 noise_rate=np.sqrt(0.1),
+                 noise_rate=0.2,
                  num_steps=10, 
                  obs_info_noise=False, 
                  compute_obs_info=None):
-
+        self.noise_rate = noise_rate
         super().__init__(model, 
                          subsample_positions=subsample_positions, 
                          batch_size=batch_size, 
@@ -56,8 +53,6 @@ class SGLD(SGHMC):
                          num_steps=num_steps, 
                          obs_info_noise=obs_info_noise, 
                          compute_obs_info=compute_obs_info)
-
-        self.noise_rate = noise_rate
 
     def setup(self, warmup_steps, *model_args, **model_kwargs):
         super().setup(warmup_steps, *model_args, **model_kwargs)
@@ -71,7 +66,7 @@ class SGLD(SGHMC):
         if self.obs_info_noise:
             noise_term = 0.5 * self.noise_rate * self.obs_info
             loc = torch.zeros(self.corresponder.total_size)
-            cov = torch.eye(self.corresponder.total_size)
+            cov = torch.eye(self.corresponder.total_size) * noise_term
             sample = pyro.sample(sample_name, dist.MultivariateNormal(loc, cov))
         else:
             noise_term = self.noise_rate
