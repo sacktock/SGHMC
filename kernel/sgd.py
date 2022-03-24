@@ -153,7 +153,6 @@ class SGD(MCMCKernel):
 
         return potential_fn
 
-
     def sample(self, params):
         # Increment the step counter
         self._step_count += 1

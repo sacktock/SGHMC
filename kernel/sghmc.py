@@ -293,7 +293,7 @@ class SGHMC(MCMCKernel):
     def logging(self):
         return OrderedDict(
             [
-                ("lr", "{:.2e}".format(self.learning_rate))
+                ("lr", "{:.2e}".format(self.learning_rate)),
             ]
         )
 
