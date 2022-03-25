@@ -79,19 +79,15 @@ class NUTS(SGHMC_for_NUTS):
     generated will typically have lower autocorrelation than those generated
     by the :class:`~pyro.infer.mcmc.HMC` kernel. Optionally, the NUTS kernel
     also provides the ability to adapt step size during the warmup phase.
-
     Refer to the `baseball example <https://github.com/pyro-ppl/pyro/blob/dev/examples/baseball.py>`_
     to see how to do Bayesian inference in Pyro using NUTS.
-
     **References**
-
     [1] `The No-U-turn sampler: adaptively setting path lengths in Hamiltonian Monte Carlo`,
         Matthew D. Hoffman, and Andrew Gelman.
     [2] `A Conceptual Introduction to Hamiltonian Monte Carlo`,
         Michael Betancourt
     [3] `Slice Sampling`,
         Radford M. Neal
-
     :param model: Python callable containing Pyro primitives.
     :param potential_fn: Python callable calculating potential energy with input
         is a dict of real support parameters.
@@ -131,9 +127,7 @@ class NUTS(SGHMC_for_NUTS):
         scheme of NUTS sampler. Default to 10.
     :param callable init_strategy: A per-site initialization function.
         See :ref:`autoguide-initialization` section for available functions.
-
     Example:
-
         >>> true_coefs = torch.tensor([1., 2., 3.])
         >>> data = torch.randn(2000, 3)
         >>> dim = 3
@@ -158,34 +152,30 @@ class NUTS(SGHMC_for_NUTS):
         subsample_positions=[0],
         batch_size=5,
         potential_fn=None,
-        step_size=0.1,
+        learning_rate=0.1, 
+        momentum_decay=0.01,
         resample_every_n=50,
         with_friction=True,
-        friction_constant=1.0,
         friction_term=None,
         obs_info_noise=True,
         compute_obs_info='every_sample',
-        do_mh_correction=False,
         target_accept = 0.8,
         use_multinomial_sampling=True,
         max_tree_depth=10,
-        do_step_size_adaptation=True,
     ):
         super().__init__(
         model,
         subsample_positions=subsample_positions,
         batch_size=batch_size,
-        step_size=step_size, 
+        step_size=learning_rate**0.5, 
         resample_every_n=resample_every_n,
         num_steps=None,
         with_friction=with_friction,
         friction_term=friction_term,
-        friction_constant=friction_constant,
+        friction_constant=momentum_decay/learning_rate**0.5,
         target_accept=target_accept,
         obs_info_noise=obs_info_noise,
         compute_obs_info=compute_obs_info,
-        do_mh_correction=do_mh_correction,
-        do_step_size_adaptation=do_step_size_adaptation,
         )
         self.use_multinomial_sampling = use_multinomial_sampling
         self._max_tree_depth = max_tree_depth
@@ -218,10 +208,11 @@ class NUTS(SGHMC_for_NUTS):
         return (left_angle <= 0) or (right_angle <= 0)
 
     def _build_basetree(self, z, r, z_grads, log_slice, direction, energy_current):
-        step_size = self.step_size if direction == 1 else -self.step_size
+        self.step_size = self.step_size if direction == 1 else -self.step_size
         z_new = self.update_position(r, z)
         z_grads, potential_energy = potential_grad(self.potential_fn, z_new)
         r_new = self._step_momentum(r, z_grads)
+        self.step_size = self.step_size if direction == 1 else -self.step_size
 
         r_new_unscaled = unscale(r_new)
         energy_new = potential_energy + self.kinetic_energy(r_new_unscaled)
@@ -439,7 +430,6 @@ class NUTS(SGHMC_for_NUTS):
         r_left = r_right = r
         r_left_unscaled = r_right_unscaled = r_unscaled
         z_left_grads = z_right_grads = z_grads
-        accepted = False
         r_sum = r_unscaled
         sum_accept_probs = 0.0
         num_proposals = 0
@@ -494,10 +484,10 @@ class NUTS(SGHMC_for_NUTS):
                 num_proposals = num_proposals + new_tree.num_proposals
 
                 # stop doubling
-                if new_tree.diverging:
-                    if self._t >= self._warmup_steps:
-                        self._divergences.append(self._t - self._warmup_steps)
-                    break
+                # if new_tree.diverging:
+                #     if self._t >= self._warmup_steps:
+                #         self._divergences.append(self._t - self._warmup_steps)
+                #     break
 
                 if new_tree.turning:
                     break
@@ -515,11 +505,9 @@ class NUTS(SGHMC_for_NUTS):
                     ),
                 )
 
-                if rand < new_tree_prob and self.do_mh_correction or not self.do_mh_correction:
-                    accepted = True
-                    z = new_tree.z_proposal
-                    z_grads = new_tree.z_proposal_grads
-                    self._cache(z, new_tree.z_proposal_pe, z_grads)
+                z = new_tree.z_proposal
+                z_grads = new_tree.z_proposal_grads
+                self._cache(z, new_tree.z_proposal_pe, z_grads)
 
                 r_sum = {
                     site_names: r_sum[site_names] + new_tree.r_sum[site_names]
@@ -540,13 +528,9 @@ class NUTS(SGHMC_for_NUTS):
         self._t += 1
         if self._t > self._warmup_steps:
             n = self._t - self._warmup_steps
-            if accepted:
-                self._accept_cnt += 1
+            self._accept_cnt += 1
         else:
             n = self._t
-
-        if self._t <= self._warmup_steps and self.do_step_size_adaptation:
-            self._update_step_size(new_tree_prob.clamp(max=1.0).item())
 
 
         self._mean_accept_prob += (accept_prob.item() - self._mean_accept_prob) / n
