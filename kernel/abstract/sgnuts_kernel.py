@@ -167,6 +167,32 @@ class SGHMC_for_NUTS(SGHMC):
         z_grads, potential_energy = potential_grad(self.full_potential_fn, z)
         self._cache(self.initial_params, potential_energy, z_grads)
 
+    def _step_momentum(self, orig, grad):   
+        if self.with_friction:
+            f = self._sample_friction(f"f_{self._step_count}")
+            return {site:(orig[site] - self.step_size * grad[site] - abs(self.step_size) * self.friction_term[site] * orig[site] + f[site]) for site in orig}
+        else:
+            return {site:(orig[site] - self.step_size * grad[site]) for site in orig}
+
+    def _sample_friction(self, sample_name):
+
+        # Only use the noise term if we have computed it from the observed
+        # information
+        if self.obs_info_noise:
+            noise_term = 0.5 * self.step_size * abs(self.obs_info)
+        else:
+            noise_term = 0
+        
+        # Determine the scale and covariace of the friction
+        loc = torch.zeros(self.corresponder.total_size)
+        cov = (2 * (self.friction_term_tensor - noise_term) * abs(self.step_size))
+
+        # Sample the friction
+        sample = pyro.sample(sample_name, dist.MultivariateNormal(loc, cov))
+
+        # Return it as a parameter dictionary
+        return self.corresponder.to_params(sample)
+
     def _cache(self, z, potential_energy, z_grads=None):
         self._z_last = z
         self._potential_energy_last = potential_energy
