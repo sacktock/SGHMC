@@ -173,7 +173,7 @@ class SGHMC_for_NUTS(SGHMC):
             else:
                 return {site:(orig[site].view(grad[site].shape) - abs(self.step_size) * grad[site]) for site in orig}
         except:
-            super()._step_momentum(orig, grad)
+            return super()._step_momentum(orig, grad)
             
 
     def _cache(self, z, potential_energy, z_grads=None):

@@ -215,6 +215,7 @@ class NUTS(SGHMC_for_NUTS):
         self.step_size = self.step_size if direction == 1 else -self.step_size
 
         r_new_unscaled = unscale(r_new)
+        print(r_new_unscaled)
         energy_new = potential_energy + self.kinetic_energy(r_new_unscaled)
         # handle the NaN case
         energy_new = (
