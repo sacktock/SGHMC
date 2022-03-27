@@ -32,8 +32,6 @@ def format_momentum_sample(sample):
     r_unscaled = unscale(r)
     return r, r_unscaled
 
-
-
 # sum_accept_probs and num_proposals are used to calculate
 # the statistic accept_prob for Dual Averaging scheme;
 # z_left_grads and z_right_grads are kept to avoid recalculating
@@ -215,7 +213,6 @@ class NUTS(SGHMC_for_NUTS):
         self.step_size = self.step_size if direction == 1 else -self.step_size
 
         r_new_unscaled = unscale(r_new)
-        print(r_new_unscaled)
         energy_new = potential_energy + self.kinetic_energy(r_new_unscaled)
         # handle the NaN case
         energy_new = (

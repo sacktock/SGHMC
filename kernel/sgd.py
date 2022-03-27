@@ -54,13 +54,13 @@ class SGD(MCMCKernel):
         self.corresponder = ParamTensorCorresponder()
         self.momentum_decay = momentum_decay
         self._dampening = 0.0
+        self._momentum = None
 
     def setup(self, warmup_steps, *model_args, **model_kwargs):
 
         # Save positional and keyword arguments
         self.model_args = model_args
         self.model_kwargs = model_kwargs
-
 
         # Compute the data size and check if it is a pytorch tensor
         try:
@@ -77,28 +77,26 @@ class SGD(MCMCKernel):
             except AssertionError:
                 raise RuntimeError("Can't subsample arguments with different lengths")
 
-        initial_params, potential_fn, transforms, _ = initialize_model(
-            self.model,
-            self.model_args,
-            self.model_kwargs,
-            initial_params = self._initial_params
-        )
+        if self._initial_params is None:
+            initial_params, potential_fn, transforms, _ = initialize_model(
+                self.model,
+                self.model_args,
+                self.model_kwargs,
+                initial_params = self._initial_params
+            )
 
-        # Set up the corresponder between parameter dicts and tensors
-        self.corresponder.configure(initial_params)
+            # Cache variables
+            self._initial_params = initial_params
+            self.full_potential_fn = potential_fn
+            self.transforms = transforms
+
+        self.corresponder.configure(self._initial_params)
 
         # Initialise random parameters
         #loc = torch.zeros(self.corresponder.total_size)
         #scale = torch.ones(self.corresponder.total_size)
         #initial_params = pyro.sample('initial_params', dist.Normal(loc, scale))
         #initial_params = self.corresponder.to_params(initial_params)
-
-        # Cache variables
-        self._initial_params = initial_params
-        self.full_potential_fn = potential_fn
-        self.transforms = transforms
-
-        self._momentum = None
 
         self._step_count = 0
 
@@ -109,7 +107,7 @@ class SGD(MCMCKernel):
         return self._step_position(x, grad)
 
     def _step_grad(self, grad, v):
-        return {site:(grad[site] + v[site].view(grad[site].shape)) for site in grad}
+        return {site:(grad[site] + (1 - self.momentum_decay) * v[site].view(grad[site].shape)) for site in grad}
 
     def update_grad(self, grad, v):
         return self._step_grad(grad, v)
@@ -183,6 +181,9 @@ class SGD(MCMCKernel):
         # Cache momentum
         if self.with_momentum:
             self._momentum = v
+
+        # Cache params
+        self._initial_params = x
 
         return x
 

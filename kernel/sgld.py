@@ -102,6 +102,9 @@ class SGLD(SGHMC):
             # Step position variable using gradient plus Langevin dynamics
             x = self.update_position(x, potential_fn)
 
+        # Cache params
+        self._initial_params = x
+
         return x
 
     def logging(self):

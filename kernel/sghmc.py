@@ -66,6 +66,7 @@ class SGHMC(MCMCKernel):
         self.compute_obs_info = compute_obs_info
         self._initial_params = None
         self.corresponder = ParamTensorCorresponder()
+        self._momentum = None
         
         
     def setup(self, warmup_steps, *model_args, **model_kwargs):
@@ -98,40 +99,40 @@ class SGHMC(MCMCKernel):
                 
         # Compute the initial parameter and potential function from the model
         # Use entire dataset to find initial parameters using pyros in-built search    
-        if self.compute_obs_info == "start" and self.obs_info_noise:
-            # We need the nll_fn if we want to compute obs info right now
-            initial_params, potential_fn, nll_fn, transforms, _ = initialize_model(
-                self.model,
-                self.model_args,
-                self.model_kwargs,
-                initial_params=self._initial_params,
-                return_nll_fn=True
-            )
-        else:
-            initial_params, potential_fn, transforms, _ = initialize_model(
-                self.model,
-                self.model_args,
-                self.model_kwargs,
-                initial_params = self._initial_params
-            )
+        if self._initial_params is None:
+            if self.compute_obs_info == "start" and self.obs_info_noise:
+                # We need the nll_fn if we want to compute obs info right now
+                initial_params, potential_fn, nll_fn, transforms, _ = initialize_model(
+                    self.model,
+                    self.model_args,
+                    self.model_kwargs,
+                    initial_params=self._initial_params,
+                    return_nll_fn=True
+                )
+            else:
+                initial_params, potential_fn, transforms, _ = initialize_model(
+                    self.model,
+                    self.model_args,
+                    self.model_kwargs,
+                    initial_params = self._initial_params
+                )
 
+            #initial_params = self.corresponder.wrap(initial_params)
+
+            # Cache variables
+            self._initial_params = initial_params
+            self.full_potential_fn = potential_fn
+            self.transforms = transforms
+
+            if self.compute_obs_info == "start" and self.obs_info_noise:
+                # Compute obs_info once using initial parameters
+                self.obs_info = self.compute_observed_information(initial_params, nll_fn)
+            else:
+                # Set up the obs_info variable
+                self.obs_info = None
 
         # Set up the corresponder between parameter dicts and tensors
-        self.corresponder.configure(initial_params)
-
-        #initial_params = self.corresponder.wrap(initial_params)
-
-        # Cache variables
-        self._initial_params = initial_params
-        self.full_potential_fn = potential_fn
-        self.transforms = transforms
-
-        if self.compute_obs_info == "start" and self.obs_info_noise:
-            # Compute obs_info once using initial parameters
-            self.obs_info = self.compute_observed_information(initial_params, nll_fn)
-        else:
-            # Set up the obs_info variable
-            self.obs_info = None
+        self.corresponder.configure(self._initial_params)
 
         self._obs_info_arr = []
 
@@ -157,7 +158,7 @@ class SGHMC(MCMCKernel):
     # Sample the momentum variables from a standard normal
     def sample_momentum(self, sample_name):
         loc = torch.zeros(self.corresponder.total_size)
-        scale = torch.ones(self.corresponder.total_size) * np.sqrt(self.learning_rate)
+        scale = torch.ones(self.corresponder.total_size) * 2 * self.learning_rate
         sample = pyro.sample(sample_name, dist.Normal(loc, scale))
         return self.corresponder.to_params(sample)
 
@@ -262,7 +263,7 @@ class SGHMC(MCMCKernel):
         theta = params
 
         # Resample the momentum
-        if not ((self._step_count - 1) % self.resample_every_n):
+        if self._momentum is None:
             v = self.sample_momentum(f"v_{self._step_count}")
         else:
             v = self._momentum
@@ -284,6 +285,9 @@ class SGHMC(MCMCKernel):
 
         # Cache current momentum 
         self._momentum = v
+
+        # Cache params
+        self._initial_params = theta
 
         return theta
 
