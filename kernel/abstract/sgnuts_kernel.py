@@ -5,6 +5,7 @@ import torch
 import pyro
 
 from pyro.ops.integrator import potential_grad
+import pyro.distributions as dist
 
 from kernel.utils.main import initialize_model
 from kernel.utils.param_tensor_corresponder import ParamTensorCorresponder
@@ -147,15 +148,6 @@ class SGHMC_for_NUTS(SGHMC):
             # Set up the obs_info variable
             self.obs_info = None
 
-        # Compute the friction term as a parameter dict and a block matrix
-        if self.friction_term is None:
-            self.friction_term = {}
-            for name, size in self.corresponder.site_sizes.items():
-                self.friction_term[name] = torch.eye(size)
-        self.friction_term_tensor = self.corresponder.to_block_matrix(
-            self.friction_term
-        )
-
         # Set up the automatic step size adapter
         self.step_size_adapter = DualAveragingStepSize(self.step_size)
 
@@ -167,31 +159,22 @@ class SGHMC_for_NUTS(SGHMC):
         z_grads, potential_energy = potential_grad(self.full_potential_fn, z)
         self._cache(self.initial_params, potential_energy, z_grads)
 
+    def _step_position(self, orig, mom): 
+        try:
+            return {site:(orig[site] + self.step_size * mom[site].view(orig[site].shape)) for site in orig}
+        except:
+            return super()._step_position(orig, mom)
+
     def _step_momentum(self, orig, grad):   
-        if self.with_friction:
-            f = self._sample_friction(f"f_{self._step_count}")
-            return {site:(orig[site] - self.step_size * grad[site] - abs(self.step_size) * self.friction_term[site] * orig[site] + f[site]) for site in orig}
-        else:
-            return {site:(orig[site] - self.step_size * grad[site]) for site in orig}
-
-    def _sample_friction(self, sample_name):
-
-        # Only use the noise term if we have computed it from the observed
-        # information
-        if self.obs_info_noise:
-            noise_term = 0.5 * self.step_size * abs(self.obs_info)
-        else:
-            noise_term = 0
-        
-        # Determine the scale and covariace of the friction
-        loc = torch.zeros(self.corresponder.total_size)
-        cov = (2 * (self.friction_term_tensor - noise_term) * abs(self.step_size))
-
-        # Sample the friction
-        sample = pyro.sample(sample_name, dist.MultivariateNormal(loc, cov))
-
-        # Return it as a parameter dictionary
-        return self.corresponder.to_params(sample)
+        try:
+            if self.with_friction:
+                fric = self._sample_friction(f"f_{self._step_count}")
+                return {site:(orig[site].view(grad[site].shape) - self.step_size * grad[site] - abs(self.step_size) * self.C * orig[site].view(grad[site].shape) + fric[site].view(grad[site].shape)) for site in orig}
+            else:
+                return {site:(orig[site].view(grad[site].shape) - abs(self.step_size) * grad[site]) for site in orig}
+        except:
+            super()._step_momentum(orig, grad)
+            
 
     def _cache(self, z, potential_energy, z_grads=None):
         self._z_last = z

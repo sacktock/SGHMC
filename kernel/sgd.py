@@ -53,6 +53,7 @@ class SGD(MCMCKernel):
         self._initial_params = None
         self.corresponder = ParamTensorCorresponder()
         self.momentum_decay = momentum_decay
+        self._dampening = 0.0
 
     def setup(self, warmup_steps, *model_args, **model_kwargs):
 
@@ -115,12 +116,12 @@ class SGD(MCMCKernel):
 
     def _step_momentum(self, orig, grad):
         if self._momentum is not None: 
-            return {site : (orig[site].view(grad[site].shape) + (1 - self.momentum_decay) * grad[site]) for site in orig}
+            return {site : ((1 - self.momentum_decay) * orig[site].view(grad[site].shape) + (1 - self._dampening) * grad[site]) for site in orig}
         else:
-            return {site : (orig[site].view(grad[site].shape) +  grad[site]) for site in orig}
+            return {site : ((1 - self.momentum_decay) * orig[site].view(grad[site].shape) +  grad[site]) for site in orig}
 
     def _add_weight_decay(self, grad, x):
-        return {site : (grad[site] + self.weight_decay * x[site]) for site in grad}
+        return {site : (self.learning_rate * (grad[site] + self.weight_decay * x[site])) for site in grad}
 
     def update_momentum(self, v, grad):
         return self._step_momentum(v, grad)

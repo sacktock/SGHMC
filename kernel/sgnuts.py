@@ -397,6 +397,7 @@ class NUTS(SGHMC_for_NUTS):
             return z
         momentum_sample = self.sample_momentum(sample_name="r_t={}".format(self._t))
         r, r_unscaled = format_momentum_sample(momentum_sample)
+
         energy_current = self.kinetic_energy(r_unscaled) + potential_energy
 
         # Ideally, following a symplectic integrator trajectory, the energy is constant.

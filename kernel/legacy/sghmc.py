@@ -198,12 +198,19 @@ class SGHMC(MCMCKernel):
     # Computes orig + step * grad elementwise, where orig and grad are
     # dictionaries with the same keys
     # If with_friction adds additional update terms elementwise
-    def _step_momentum(self, orig, grad):   
-        if self.with_friction:
-            f = self._sample_friction(f"f_{self._step_count}")
-            return {site:(orig[site] - self.step_size * grad[site] - self.step_size * self.friction_term[site] * orig[site] + f[site]) for site in orig}
-        else:
-            return {site:(orig[site] - self.step_size * grad[site]) for site in orig}
+    def _step_momentum(self, orig, grad): 
+        try:
+            if self.with_friction:
+                f = self._sample_friction(f"f_{self._step_count}")
+                return {site:(orig[site] - self.step_size * grad[site] - self.step_size * self.C * orig[site] + f[site]) for site in orig}
+            else:
+                return {site:(orig[site] - self.step_size * grad[site]) for site in orig}
+        except:
+            if self.with_friction:
+                f = self._sample_friction(f"f_{self._step_count}")
+                return {site:(orig[site] - self.step_size * grad[site] - self.step_size * self.C * orig[site] + f[site].view(grad[site].shape)) for site in orig}
+            else:
+                return {site:(orig[site] - self.step_size * grad[site]) for site in orig}
 
     # Sample the momentum variables from a standard normal
     def sample_momentum(self, sample_name):
@@ -253,22 +260,21 @@ class SGHMC(MCMCKernel):
 
         return observed_information(nll_fn_tensor, q_tensor)
 
-    # Sample the momentum variables from a standard normal
     def _sample_friction(self, sample_name):
 
         # Only use the noise term if we have computed it from the observed
         # information
         if self.obs_info_noise:
-            noise_term = 0.5 * self.step_size * self.obs_info
+            noise_term = 0.5 * self.step_size * abs(self.obs_info)
         else:
-            noise_term = 0
+            noise_term = torch.zeros(self.corresponder.total_size)
         
         # Determine the scale and covariace of the friction
         loc = torch.zeros(self.corresponder.total_size)
-        cov = (2 * (self.friction_term_tensor - noise_term) * self.step_size)
+        scale = torch.ones(self.corresponder.total_size) * (self.C - noise_term) * 2 * abs(self.step_size)
 
         # Sample the friction
-        sample = pyro.sample(sample_name, dist.MultivariateNormal(loc, cov))
+        sample = pyro.sample(sample_name, dist.Normal(loc, scale))
 
         # Return it as a parameter dictionary
         return self.corresponder.to_params(sample)
