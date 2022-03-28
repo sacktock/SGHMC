@@ -71,7 +71,13 @@ class BNN(pyro.nn.PyroModule):
         with pyro.plate("data", x.shape[0]):
             obs = pyro.sample("obs", dist.Categorical(logits=x), obs=y)
 
-def run_inference(sampler):
+def run_inference(sampler, lr_decay=False):
+
+    if lr_decay:
+        D = 0.25 # decay by 1/4
+        B = (NUM_EPOCHS * D**2) / (1 - D**2)
+        A = LR * np.sqrt((NUM_EPOCHS * D**2) / (1 - D**2))
+
     test_errs = []
 
     # full posterior predictive 
@@ -82,6 +88,10 @@ def run_inference(sampler):
         sampler.run(X_train, Y_train)
         
         if epoch >= WARMUP_EPOCHS:
+
+            if lr_decay:
+                LR = A / np.sqrt((B + (epoch-1)))
+                sgld_mcmc.kernel.learning_rate = LR
             
             samples = sampler.get_samples()
             predictive = pyro.infer.Predictive(bnn, posterior_samples=samples)
@@ -97,6 +107,8 @@ def run_inference(sampler):
                         
                 for sample in epoch_predictive:
                     predictive_one_hot = F.one_hot(sample, num_classes=10)
+                    if lr_decay:
+                        predictive_one_hot = predictive_one_hot * LR
                     full_predictive = full_predictive + predictive_one_hot
                     
                 full_y_hat = torch.argmax(full_predictive, dim=1)
@@ -151,7 +163,7 @@ def plot(err_arr):
     if UPDATER == 'SGHMC':
         PATH = './imgs/bnn_{}_lr={}_alpha={}_resample_n={}.png'.format(UPDATER, LR, MOMENTUM_DECAY, RESAMPLE_EVERY_N)
     elif UPDATER == 'SGLD':
-        PATH = './imgs/bnn_{}_lr={}.png'.format(UPDATER, LR)
+        PATH = './imgs/bnn_{}_lr={}_lr_decay={}.png'.format(UPDATER, LR, LR_DECAY)
     elif UPDATER == 'SGD':
         PATH = './imgs/bnn_{}_lr={}_reg={}_wd={}.png'.format(UPDATER, LR, REGULARIZATION_TERM, WEIGHT_DECAY)
     elif UPDATER == 'SGDMOM':
@@ -166,6 +178,7 @@ if __name__ == "__main__":
     WEIGHT_DECAY=0.0
     MOMENTUM_DECAY=0.01
     REGULARIZATION_TERM=1.
+    LR_DECAY = False
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--updater", default=UPDATER)
@@ -178,6 +191,7 @@ if __name__ == "__main__":
     parser.add_argument("--resample-n", default=RESAMPLE_EVERY_N)
     parser.add_argument("--wd", default=WEIGHT_DECAY)
     parser.add_argument("--reg", default=REGULARIZATION_TERM)
+    parse.add_argument("--lr-decay", default=LR_DECAY)
     args = parser.parse_args()
 
     UPDATER = args.updater
@@ -190,6 +204,7 @@ if __name__ == "__main__":
     RESAMPLE_EVERY_N = int(args.resample_n)
     WEIGHT_DECAY = float(args.wd)
     REGULARIZATION_TERM = float(args.reg)
+    LR_DECAY = bool(args.lr_decay)
 
     train_dataset = datasets.MNIST('./data', train=True, download=True)
     test_dataset = datasets.MNIST('./data', train=False, download=True)
@@ -199,18 +214,15 @@ if __name__ == "__main__":
     perm = torch.arange(len(train_dataset))
     train_idx = perm[nvalid:]
     val_idx = perm[:nvalid]
-        
-    mean = 0.1307
-    std = 0.3081
 
-    # scale and normalise the datasets
+    # scale the datasets
     X_train = train_dataset.data[train_idx] / 255.0
     Y_train = train_dataset.targets[train_idx]
 
     X_val = train_dataset.data[val_idx] / 255.0 
     Y_val = train_dataset.targets[val_idx]
 
-    X_test = (test_dataset.data / 255.0 - mean) / std
+    X_test = test_dataset.data / 255.0
     Y_test = test_dataset.targets
 
     # redefine the datasets
@@ -266,7 +278,7 @@ if __name__ == "__main__":
     mcmc_sampler = MCMC(kernel, num_samples=len(train_dataset)//BATCH_SIZE, warmup_steps=0)
 
     if UPDATER in ['SGHMC', 'SGLD']:
-        test_errs = run_inference(mcmc_sampler)
+        test_errs = run_inference(mcmc_sampler, lr_decay=LR_DECAY)
     else:
         test_errs = run_optim(mcmc_sampler)
 

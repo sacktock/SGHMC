@@ -41,11 +41,9 @@ class SGLD(SGHMC):
                  subsample_positions=[0], 
                  batch_size=5, 
                  learning_rate=0.1, 
-                 noise_rate=0.2,
                  num_steps=10, 
                  obs_info_noise=False, 
                  compute_obs_info=None):
-        self.noise_rate = noise_rate
         super().__init__(model, 
                          subsample_positions=subsample_positions, 
                          batch_size=batch_size, 
@@ -64,12 +62,12 @@ class SGLD(SGHMC):
 
     def _sample_noise(self, sample_name):
         if self.obs_info_noise:
-            noise_term = 0.5 * self.noise_rate * self.obs_info
+            noise_term = 0.5 * self.learning_rate * self.obs_info
             loc = torch.zeros(self.corresponder.total_size)
             cov = torch.eye(self.corresponder.total_size) * noise_term
             sample = pyro.sample(sample_name, dist.MultivariateNormal(loc, cov))
         else:
-            noise_term = self.noise_rate
+            noise_term = self.learning_rate * 2
             loc = torch.zeros(self.corresponder.total_size)
             scale = torch.ones(self.corresponder.total_size)  * noise_term
             sample = pyro.sample(sample_name, dist.Normal(loc, scale))
