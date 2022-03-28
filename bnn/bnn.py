@@ -224,7 +224,11 @@ if __name__ == "__main__":
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
     bnn = BNN(28*28, HIDDEN_SIZE, 10, prec=REGULARIZATION_TERM)
+
+    pyro.clear_param_store()
+
     kernel = None
+
     if UPDATER == 'SGHMC':
         kernel = SGHMC(bnn,
                        subsample_positions=[0, 1],
