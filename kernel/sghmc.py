@@ -263,7 +263,7 @@ class SGHMC(MCMCKernel):
         theta = params
 
         # Resample the momentum
-        if self._momentum is None:
+        if self._momentum is None or (self.resample_every_n != 0 and ((self._step_count - 1) % self.resample_every_n == 0)):
             v = self.sample_momentum(f"v_{self._step_count}")
         else:
             v = self._momentum
