@@ -1,6 +1,6 @@
 import os
 
-SKIP = 0 # how many experiments to skip - if you have run 5 set SKIP to 5 and it will skip the furst 5 experiments
+SKIP = 8 # how many experiments to skip - if you have run 5 set SKIP to 5 and it will skip the furst 5 experiments
 
 # SGHMC
 for alpha in [0.1, 0.01, 0.001]:
@@ -72,7 +72,7 @@ for wd in [0.0, 1e-6]:
                         wd,
                         reg
                     ))
-    if wd = 1e-6:
+    if wd == 1e-6:
         for alpha in [0.1, 0.01, 0.001]:
             for eta in [1e-4, 2e-4, 4e-4, 8e-4]:   
                 for reg in [0.1, 1.0, 10.0]:

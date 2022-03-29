@@ -191,7 +191,7 @@ if __name__ == "__main__":
     parser.add_argument("--resample-n", default=RESAMPLE_EVERY_N)
     parser.add_argument("--wd", default=WEIGHT_DECAY)
     parser.add_argument("--reg", default=REGULARIZATION_TERM)
-    parse.add_argument("--lr-decay", default=LR_DECAY)
+    parser.add_argument("--lr-decay", default=LR_DECAY)
     args = parser.parse_args()
 
     UPDATER = args.updater
