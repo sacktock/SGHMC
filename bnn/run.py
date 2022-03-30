@@ -1,6 +1,6 @@
 import os
 
-SKIP = 16 # how many experiments to skip - if you have run 5 set SKIP to 5 and it will skip the furst 5 experiments
+SKIP = 18 # how many experiments to skip - if you have run 5 set SKIP to 5 and it will skip the furst 5 experiments
 
 # SGHMC 
 for alpha in [0.1, 0.01, 0.001]:
@@ -21,7 +21,7 @@ for alpha in [0.1, 0.01, 0.001]:
             ))
 #SGLD
 for eta in [1e-5, 2e-5, 4e-5, 8e-5]:
-    for lr_decay in [0, 1]:
+    for lr_decay in [1, 0]:
         if SKIP:
             SKIP -= 1
             continue

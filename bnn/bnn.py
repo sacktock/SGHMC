@@ -90,8 +90,8 @@ def run_inference(sampler, lr_decay=False):
         if epoch >= WARMUP_EPOCHS:
 
             if lr_decay:
-                LR = A / np.sqrt((B + (epoch-1)))
-                sgld_mcmc.kernel.learning_rate = LR
+                LR_CURRENT = A / np.sqrt((B + (epoch-1)))
+                sampler.kernel.learning_rate = LR_CURRENT
             
             samples = sampler.get_samples()
             predictive = pyro.infer.Predictive(bnn, posterior_samples=samples)
@@ -108,7 +108,7 @@ def run_inference(sampler, lr_decay=False):
                 for sample in epoch_predictive:
                     predictive_one_hot = F.one_hot(sample, num_classes=10)
                     if lr_decay:
-                        predictive_one_hot = predictive_one_hot * LR
+                        predictive_one_hot = predictive_one_hot * LR_CURRENT
                     full_predictive = full_predictive + predictive_one_hot
                     
                 full_y_hat = torch.argmax(full_predictive, dim=1)
@@ -254,7 +254,6 @@ if __name__ == "__main__":
                       subsample_positions=[0, 1],
                       batch_size=BATCH_SIZE,
                       learning_rate=LR,
-                      noise_rate=2*LR,
                       num_steps=NUM_STEPS)
     elif UPDATER == 'SGD':
         kernel = SGD(bnn,
