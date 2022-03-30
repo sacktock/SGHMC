@@ -1,8 +1,8 @@
 import os
 
-SKIP = 8 # how many experiments to skip - if you have run 5 set SKIP to 5 and it will skip the furst 5 experiments
+SKIP = 16 # how many experiments to skip - if you have run 5 set SKIP to 5 and it will skip the furst 5 experiments
 
-# SGHMC
+# SGHMC 
 for alpha in [0.1, 0.01, 0.001]:
     for eta in [1e-6, 2e-6, 4e-6, 8e-6]:
         for resample_n in [0, 100]:
