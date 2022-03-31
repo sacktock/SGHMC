@@ -16,19 +16,19 @@ def _logaddexp(x, y):
 
 def unscale(r):
     site_names = []
-    parameters = []
+    parameters = torch.Tensor()
     for site_name, param in r.items():
         site_names.append(site_name)
-        parameters.append(param.item())
+        parameters = torch.cat((parameters, torch.flatten(param)))
     site_names = tuple(site_names)
-    r_unscaled = {site_names: torch.Tensor(parameters)}
+    r_unscaled = {site_names: parameters}
     return r_unscaled
 
 def scale(r):  
     pass
 
 def format_momentum_sample(sample):
-    r = {k: v[0] for k, v in sample.items()}
+    r = sample
     r_unscaled = unscale(r)
     return r, r_unscaled
 
@@ -430,6 +430,7 @@ class NUTS(SGHMC_for_NUTS):
         r_left_unscaled = r_right_unscaled = r_unscaled
         z_left_grads = z_right_grads = z_grads
         r_sum = r_unscaled
+
         sum_accept_probs = 0.0
         num_proposals = 0
         tree_weight = scalar_like(
@@ -507,7 +508,6 @@ class NUTS(SGHMC_for_NUTS):
                 z = new_tree.z_proposal
                 z_grads = new_tree.z_proposal_grads
                 self._cache(z, new_tree.z_proposal_pe, z_grads)
-
                 r_sum = {
                     site_names: r_sum[site_names] + new_tree.r_sum[site_names]
                     for site_names in r_unscaled
