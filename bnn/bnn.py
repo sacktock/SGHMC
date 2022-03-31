@@ -204,7 +204,7 @@ if __name__ == "__main__":
     RESAMPLE_EVERY_N = int(args.resample_n)
     WEIGHT_DECAY = float(args.wd)
     REGULARIZATION_TERM = float(args.reg)
-    LR_DECAY = bool(args.lr_decay)
+    LR_DECAY = bool(int(args.lr_decay))
 
     train_dataset = datasets.MNIST('./data', train=True, download=True)
     test_dataset = datasets.MNIST('./data', train=False, download=True)
