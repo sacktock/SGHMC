@@ -1,0 +1,72 @@
+\documentclass[25pt,a0paper]{tikzposter}
+
+% Suppress some useless warnings
+\usepackage{silence}
+\WarningFilter{remreset}{The remreset package}
+\WarningFilter{latex}{Font shape declaration has incorrect series value `mc'.}
+
+% \usetheme{Default}
+% \usetheme{Rays}
+\usetheme{Basic}
+% \usetheme{Simple}
+% \usetheme{Envelope}
+% \usetheme{Wave}
+% \usetheme{Board}
+% \usetheme{Autumn}
+% \usetheme{Desert}
+
+\usepackage[UKenglish]{babel}
+\usepackage[style=alphabetic,maxbibnames=99]{biblatex}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{amsthm}
+\usepackage{csquotes}
+\usepackage[inline]{enumitem}
+\usepackage[capitalize,noabbrev]{cleveref}
+\usepackage[final]{microtype}
+
+\usepackage[charter]{mathdesign}
+\usepackage[T1]{fontenc}
+
+\title{Stochastic Gradient Hamiltonian Monte Carlo}
+\author{Sam Adam-Day, Alexander Goodall, Theo Lewy and Fanqi Xu}
+\institute{University of Oxford}
+
+% LaTeX shorthands
+\input{../commands}
+
+% Bibliography
+\addbibresource{../references.bib}
+
+\begin{document}
+
+	\maketitle
+
+	\block{Stochastic Gradient Hamiltonian Monte Carlo}{
+		Info about SGHMC \cite{sghmc}. Ut adipisicing commodo do mollit nisi Lorem exercitation nulla consectetur commodo ad. Duis amet ullamco consequat dolor. Ipsum ullamco mollit velit consectetur in ex aliquip elit dolore. Pariatur cillum quis adipisicing commodo magna occaecat commodo tempor ea culpa enim commodo. Aliquip qui dolore proident ad Lorem tempor exercitation adipisicing.
+	}
+
+
+	\begin{columns}
+
+		%%% First column %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+		\column{0.5}
+
+		\block{First block}{
+			Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa.
+		}
+
+		%%% Second column %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+		\column{0.5}
+
+		\block{Second block}{
+			Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa.
+		}
+		
+	\end{columns}
+
+	\block{References}{
+		\printbibliography[heading=none]
+	}
+
+\end{document}
