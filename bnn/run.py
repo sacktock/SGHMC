@@ -1,6 +1,6 @@
 import os
 
-SKIP = 26 # how many experiments to skip - if you have run 5 set SKIP to 5 and it will skip the furst 5 experiments
+SKIP = 34 # how many experiments to skip - if you have run 5 set SKIP to 5 and it will skip the furst 5 experiments
 
 # SGHMC - 24 experiments
 for alpha in [0.1, 0.01, 0.001]:
@@ -19,9 +19,9 @@ for alpha in [0.1, 0.01, 0.001]:
                 alpha,
                 resample_n
             ))
-#SGLD - 8 experiments
-for eta in [1e-5, 2e-5, 4e-5, 8e-5]:
-    for lr_decay in [1, 0]:
+#SGLD - 6 experiments
+for eta in [1e-5, 2e-5, 4e-5]:
+    for lr_decay in [0, 1]:
         if SKIP:
             SKIP -= 1
             continue
@@ -41,14 +41,13 @@ for eta in [1e-5, 2e-5, 4e-5, 6e-5]:
         if SKIP:
             SKIP -= 1
             continue
-        os.system('python bnn.py --updater {} --n-warmup {} --n-epochs {} --batch-size {} --hidden-size {} --lr {} --wd {} --reg {}'.format(
+        os.system('python bnn.py --updater {} --n-warmup {} --n-epochs {} --batch-size {} --hidden-size {} --lr {} --reg {}'.format(
             'SGD',
             50,
             800,
             500,
             100,
             eta,
-            wd,
             reg
         ))
 
