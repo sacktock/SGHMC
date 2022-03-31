@@ -80,7 +80,7 @@ class SGHMC_for_NUTS(SGHMC):
         self.do_mh_correction = do_mh_correction
         self.do_step_size_adaptation = do_step_size_adaptation
         self.target_accept = target_accept
-        self._initial_params = None
+        self.initial_params = None
         self.corresponder = ParamTensorCorresponder()
         self._z_last = None
         self._potential_energy_last = None
@@ -116,40 +116,38 @@ class SGHMC_for_NUTS(SGHMC):
 
         # Compute the initial parameter and potential function from the model
         # Use entire dataset to find initial parameters using pyros in-built search    
-        if self.compute_obs_info == "start":
-            # We need the nll_fn if we want to compute obs info right now
-            initial_params, potential_fn, nll_fn, transforms, _ = initialize_model(
-                self.model,
-                self.model_args,
-                self.model_kwargs,
-                initial_params=self._initial_params,
-                return_nll_fn=True
-            )
-        else:
-            initial_params, potential_fn, transforms, _ = initialize_model(
-                self.model,
-                self.model_args,
-                self.model_kwargs,
-                initial_params = self._initial_params
-            )
+        if self.initial_params is None:
+            if self.compute_obs_info == "start":
+                # We need the nll_fn if we want to compute obs info right now
+                initial_params, potential_fn, nll_fn, transforms, _ = initialize_model(
+                    self.model,
+                    self.model_args,
+                    self.model_kwargs,
+                    initial_params=self._initial_params,
+                    return_nll_fn=True
+                )
+            else:
+                initial_params, potential_fn, transforms, _ = initialize_model(
+                    self.model,
+                    self.model_args,
+                    self.model_kwargs,
+                    initial_params = self._initial_params
+                )
             
-        # Cache variables
-        self._initial_params = initial_params
-        self.full_potential_fn = potential_fn
-        self.transforms = transforms
+            # Cache variables
+            self.initial_params = initial_params
+            self.full_potential_fn = potential_fn
+            self.transforms = transforms
+
+            if self.compute_obs_info == "start":
+                # Compute obs_info once using initial parameters
+                self.obs_info = self.compute_observed_information(self.initial_params, nll_fn)
+            else:
+                # Set up the obs_info variable
+                self.obs_info = None
 
         # Set up the corresponder between parameter dicts and tensors
-        self.corresponder.configure(initial_params)
-
-        if self.compute_obs_info == "start":
-            # Compute obs_info once using initial parameters
-            self.obs_info = self.compute_observed_information(initial_params, nll_fn)
-        else:
-            # Set up the obs_info variable
-            self.obs_info = None
-
-        # Set up the automatic step size adapter
-        self.step_size_adapter = DualAveragingStepSize(self.step_size)
+        self.corresponder.configure(self.initial_params)
 
         # Set the step counter to 0
         self._step_count = 0
@@ -160,21 +158,14 @@ class SGHMC_for_NUTS(SGHMC):
         self._cache(self.initial_params, potential_energy, z_grads)
 
     def _step_position(self, orig, mom): 
-        try:
-            return {site:(orig[site] + self.step_size * mom[site].view(orig[site].shape)) for site in orig}
-        except:
-            return super()._step_position(orig, mom)
+        return {site:(orig[site] + self.step_size * mom[site].view(orig[site].shape)) for site in orig}
 
     def _step_momentum(self, orig, grad):   
-        try:
-            if self.with_friction:
-                fric = self._sample_friction(f"f_{self._step_count}")
-                return {site:(orig[site].view(grad[site].shape) - self.step_size * grad[site] - abs(self.step_size) * self.C * orig[site].view(grad[site].shape) + fric[site].view(grad[site].shape)) for site in orig}
-            else:
-                return {site:(orig[site].view(grad[site].shape) - abs(self.step_size) * grad[site]) for site in orig}
-        except:
-            return super()._step_momentum(orig, grad)
-            
+        if self.with_friction:
+            fric = self._sample_friction(f"f_{self._step_count}")
+            return {site:(orig[site].view(grad[site].shape) - self.step_size * grad[site] - abs(self.step_size) * self.C * orig[site].view(grad[site].shape) + fric[site].view(grad[site].shape)) for site in orig}
+        else:
+            return {site:(orig[site].view(grad[site].shape) - abs(self.step_size) * grad[site]) for site in orig}
 
     def _cache(self, z, potential_energy, z_grads=None):
         self._z_last = z
