@@ -1,0 +1,69 @@
+%!TEX options = -shell-escape
+
+\documentclass[a4paper]{article}
+
+% Suppress some useless warnings
+\usepackage{silence}
+\WarningFilter{remreset}{The remreset package}
+\WarningFilter{latex}{Font shape declaration has incorrect series value `mc'.}
+
+\usepackage[UKenglish]{babel}
+\usepackage[style=alphabetic,maxbibnames=99]{biblatex}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{amsthm}
+\usepackage{thmtools}
+\usepackage{csquotes}
+\usepackage[inline]{enumitem}
+\usepackage{nicefrac}
+\usepackage{fonttable}
+\usepackage{tikz}
+\usepackage[hidelinks]{hyperref}
+\usepackage[capitalize,noabbrev]{cleveref}
+\usepackage[final]{microtype}
+
+\usepackage[charter]{mathdesign}
+\usepackage[T1]{fontenc}
+
+% Fix me notes
+\usepackage[draft]{fixme}
+\fxusetheme{color}
+
+% Theorem styles
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{question}[theorem]{Question}
+\newtheorem*{mainquestion}{Main question}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{construction}[theorem]{Construction}
+\newtheorem{example}[theorem]{Example}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+% LaTeX shorthands
+\input{../commands}
+
+% Bibliography
+\addbibresource{../references.bib}
+
+\title{Reproducing the paper:\\
+\textit{Stochastic Gradient Hamiltonian Monte Carlo}\\
+by Tianqi Chen, Emily B. Fox and Carlos Guestrin}
+\author{Sam Adam-Day, Alexander Goodall, Theo Lewy and Fanqi Xu}
+\date{}
+
+\begin{document}
+
+	\maketitle
+
+	\abstract{We reproduce the experiments contained in \citetitle{sghmc} \cite{sghmc} by \citeauthor{sghmc}.}
+
+	\listoffixmes
+
+	\printbibliography
+
+
+\end{document}
