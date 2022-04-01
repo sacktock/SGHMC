@@ -52,7 +52,8 @@ class SGHMC(MCMCKernel):
                  num_steps=10, 
                  resample_every_n=50, 
                  obs_info_noise=False, 
-                 compute_obs_info=None
+                 compute_obs_info=None,
+                 device=torch.device('cpu')
                  ):
       
         self.model = model
@@ -67,6 +68,7 @@ class SGHMC(MCMCKernel):
         self._initial_params = None
         self.corresponder = ParamTensorCorresponder()
         self._momentum = None
+        self.device=device
         
         
     def setup(self, warmup_steps, *model_args, **model_kwargs):
@@ -99,12 +101,30 @@ class SGHMC(MCMCKernel):
                 
         # Compute the initial parameter and potential function from the model
         # Use entire dataset to find initial parameters using pyros in-built search    
+        # if using cuda subsample instead - unlikeluy to be able to fit the entire dataset on the gpu
+        if self.device.type=='cuda':
+            model_args_lst = list(self.model_args).copy()
+            
+            # Sample random indices
+            perm = torch.randperm(self.data_size)
+            idx = perm[:self.batch_size]
+            
+            # Sample a random mini batch for each subsampled argument
+            for pos in self.subsample_positions:
+                model_args_lst[pos] = model_args_lst[pos][idx]
+  
+            model_args = tuple(model_args_lst)
+            batch_size = self.batch_size
+        else:
+            batch_size = self.data_size
+            model_args = self.model_args
+            
         if self._initial_params is None:
             if self.compute_obs_info == "start" and self.obs_info_noise:
                 # We need the nll_fn if we want to compute obs info right now
                 initial_params, potential_fn, nll_fn, transforms, _ = initialize_model(
                     self.model,
-                    self.model_args,
+                    model_args,
                     self.model_kwargs,
                     initial_params=self._initial_params,
                     return_nll_fn=True
@@ -112,7 +132,7 @@ class SGHMC(MCMCKernel):
             else:
                 initial_params, potential_fn, transforms, _ = initialize_model(
                     self.model,
-                    self.model_args,
+                    model_args,
                     self.model_kwargs,
                     initial_params = self._initial_params
                 )
@@ -157,8 +177,8 @@ class SGHMC(MCMCKernel):
 
     # Sample the momentum variables from a standard normal
     def sample_momentum(self, sample_name):
-        loc = torch.zeros(self.corresponder.total_size)
-        scale = torch.ones(self.corresponder.total_size) * 2 * self.learning_rate
+        loc = torch.zeros(self.corresponder.total_size).to(self.device)
+        scale = torch.ones(self.corresponder.total_size).to(self.device) * 2 * self.learning_rate
         sample = pyro.sample(sample_name, dist.Normal(loc, scale))
         return self.corresponder.to_params(sample)
 
@@ -221,12 +241,12 @@ class SGHMC(MCMCKernel):
         # Only use the noise term if we have computed it from the observed
         # information
         if self.obs_info_noise:
-            noise_term = torch.diagonal(0.5 * self.learning_rate * self.obs_info)
+            noise_term = torch.diagonal(0.5 * self.learning_rate * self.obs_info).to(self.device)
         else:
-            noise_term = torch.zeros(self.corresponder.total_size)
+            noise_term = torch.zeros(self.corresponder.total_size).to(self.device)
 
-        loc = torch.zeros(self.corresponder.total_size)
-        scale = torch.ones(self.corresponder.total_size) * (self.momentum_decay - noise_term) * 2 * self.learning_rate
+        loc = torch.zeros(self.corresponder.total_size).to(self.device)
+        scale = torch.ones(self.corresponder.total_size).to(self.device) * (self.momentum_decay - noise_term) * 2 * self.learning_rate
         
         # Sample the friction
         sample = pyro.sample(sample_name, dist.Normal(loc, scale))

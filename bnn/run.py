@@ -1,6 +1,6 @@
 import os
 
-SKIP = 34 # how many experiments to skip - if you have run 5 set SKIP to 5 and it will skip the furst 5 experiments
+SKIP = 48 # how many experiments to skip - if you have run 5 set SKIP to 5 and it will skip the furst 5 experiments
 
 # SGHMC - 24 experiments
 for alpha in [0.1, 0.01, 0.001]:

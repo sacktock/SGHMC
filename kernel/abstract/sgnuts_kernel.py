@@ -81,6 +81,7 @@ class SGHMC_for_NUTS(SGHMC):
         self.do_step_size_adaptation = do_step_size_adaptation
         self.target_accept = target_accept
         self.initial_params = None
+        self._initial_params = None
         self.corresponder = ParamTensorCorresponder()
         self._z_last = None
         self._potential_energy_last = None
@@ -136,6 +137,7 @@ class SGHMC_for_NUTS(SGHMC):
             
             # Cache variables
             self.initial_params = initial_params
+            self._initial_params = initial_params
             self.full_potential_fn = potential_fn
             self.transforms = transforms
 
