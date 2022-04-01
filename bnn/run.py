@@ -61,7 +61,7 @@ for wd in [0.0, 1e-6]:
                         SKIP -= 1
                         continue
                     os.system('python bnn.py --updater {} --n-warmup {} --n-epochs {} --batch-size {} --hidden-size {} --lr {} --alpha {} --wd {} --reg {}'.format(
-                        'SGHMC',
+                        'SGDMOM',
                         50,
                         800,
                         500,
@@ -79,7 +79,7 @@ for wd in [0.0, 1e-6]:
                         SKIP -= 1
                         continue
                     os.system('python bnn.py --updater {} --n-warmup {} --n-epochs {} --batch-size {} --hidden-size {} --lr {} --alpha {} --wd {} --reg {}'.format(
-                        'SGHMC',
+                        'SGDMOM',
                         50,
                         800,
                         500,
