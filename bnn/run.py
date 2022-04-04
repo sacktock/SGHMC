@@ -1,6 +1,6 @@
 import os
 
-SKIP = 48 # how many experiments to skip - if you have run 5 set SKIP to 5 and it will skip the furst 5 experiments
+SKIP = 0 # how many experiments to skip - if you have run 5 set SKIP to 5 and it will skip the furst 5 experiments
 
 # SGHMC - 24 experiments
 for alpha in [0.1, 0.01, 0.001]:
@@ -51,7 +51,7 @@ for eta in [1e-5, 2e-5, 4e-5, 6e-5]:
             reg
         ))
 
-#SGDMOM - 48 experiments
+#SGDMOM - 72 experiments
 for wd in [0.0, 1e-6]:
     if wd == 0.0:
         for alpha in [0.1, 0.01, 0.001]:
@@ -60,6 +60,8 @@ for wd in [0.0, 1e-6]:
                     if SKIP:
                         SKIP -= 1
                         continue
+
+                    print(wd, alpha, eta, reg)
                     os.system('python bnn.py --updater {} --n-warmup {} --n-epochs {} --batch-size {} --hidden-size {} --lr {} --alpha {} --wd {} --reg {}'.format(
                         'SGDMOM',
                         50,

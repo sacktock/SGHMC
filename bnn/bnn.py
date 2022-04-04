@@ -161,13 +161,13 @@ def plot(err_arr):
     sns.lineplot(data=df, x='iterations', y='test error').set(title='{} best test error: {:.4f}'.format(UPDATER, np.min(y)))
 
     if UPDATER == 'SGHMC':
-        PATH = './imgs/bnn_{}_lr={}_alpha={}_resample_n={}.png'.format(UPDATER, LR, MOMENTUM_DECAY, RESAMPLE_EVERY_N)
+        PATH = './imgs/{}/bnn_{}_lr={}_alpha={}_resample_n={}.png'.format(UPDATER, UPDATER, LR, MOMENTUM_DECAY, RESAMPLE_EVERY_N)
     elif UPDATER == 'SGLD':
-        PATH = './imgs/bnn_{}_lr={}_lr_decay={}.png'.format(UPDATER, LR, LR_DECAY)
+        PATH = './imgs/{}/bnn_{}_lr={}_lr_decay={}.png'.format(UPDATER, UPDATER, LR, LR_DECAY)
     elif UPDATER == 'SGD':
-        PATH = './imgs/bnn_{}_lr={}_reg={}_wd={}.png'.format(UPDATER, LR, REGULARIZATION_TERM, WEIGHT_DECAY)
+        PATH = './imgs/{}/bnn_{}_lr={}_reg={}_wd={}.png'.format(UPDATER, UPDATER, LR, REGULARIZATION_TERM, WEIGHT_DECAY)
     elif UPDATER == 'SGDMOM':
-        PATH = './imgs/bnn_{}_lr={}_reg={}_wd={}.png'.format(UPDATER, LR, REGULARIZATION_TERM, WEIGHT_DECAY)
+        PATH = './imgs/{}/bnn_{}_lr={}_alpha={}_reg={}_wd={}.png'.format(UPDATER, UPDATER, LR, MOMENTUM_DECAY, REGULARIZATION_TERM, WEIGHT_DECAY)
 
     plt.savefig(PATH) #dpi=300
 
