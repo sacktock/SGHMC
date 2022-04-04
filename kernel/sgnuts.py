@@ -191,6 +191,7 @@ class NUTS(SGHMC_for_NUTS):
         #     when the energy E_p diverges from E_u too much, we stop doubling.
         # Here, as suggested in [1], we set dE_max = 1000.
         self._max_sliced_energy = 1000
+        self._momentum = None
 
     def _is_turning(self, r_left_unscaled, r_right_unscaled, r_sum):
         # We follow the strategy in Section A.4.2 of [2] for this implementation.
@@ -372,6 +373,9 @@ class NUTS(SGHMC_for_NUTS):
         )
 
     def sample(self, params):
+        # Increment the step counter
+        self._step_count += 1
+
         z, potential_energy, z_grads = self._fetch_from_cache()
         # sets the potential function for the next sample
 
@@ -393,8 +397,13 @@ class NUTS(SGHMC_for_NUTS):
             if self._t > self._warmup_steps:
                 self._accept_cnt += 1
             return z
-        momentum_sample = self.sample_momentum(sample_name="r_t={}".format(self._t))
-        r, r_unscaled = format_momentum_sample(momentum_sample)
+
+        if self._momentum is None or (self.resample_every_n != 0 and (self._step_count % self.resample_every_n == 0)):
+            momentum_sample = self.sample_momentum(sample_name="r_t={}".format(self._t))
+            r, r_unscaled = format_momentum_sample(momentum_sample)
+        else:
+            r = self._momentum
+            r, r_unscaled = format_momentum_sample(r)
 
         energy_current = self.kinetic_energy(r_unscaled) + potential_energy
 
@@ -531,7 +540,15 @@ class NUTS(SGHMC_for_NUTS):
         else:
             n = self._t
 
-
         self._mean_accept_prob += (accept_prob.item() - self._mean_accept_prob) / n
 
-        return z.copy()
+        # Cache current momentum 
+        self._momentum = r
+
+        params = z.copy()
+
+        # Cache params
+        self._initial_params = params
+        self.initial_params = params
+
+        return params

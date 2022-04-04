@@ -199,18 +199,11 @@ class SGHMC(MCMCKernel):
     # dictionaries with the same keys
     # If with_friction adds additional update terms elementwise
     def _step_momentum(self, orig, grad): 
-        try:
-            if self.with_friction:
-                f = self._sample_friction(f"f_{self._step_count}")
-                return {site:(orig[site] - self.step_size * grad[site] - self.step_size * self.C * orig[site] + f[site]) for site in orig}
-            else:
-                return {site:(orig[site] - self.step_size * grad[site]) for site in orig}
-        except:
-            if self.with_friction:
-                f = self._sample_friction(f"f_{self._step_count}")
-                return {site:(orig[site] - self.step_size * grad[site] - self.step_size * self.C * orig[site] + f[site].view(grad[site].shape)) for site in orig}
-            else:
-                return {site:(orig[site] - self.step_size * grad[site]) for site in orig}
+        if self.with_friction:
+            f = self._sample_friction(f"f_{self._step_count}")
+            return {site:(orig[site] - self.step_size * grad[site] - self.step_size * self.C * orig[site] + f[site].view(grad[site].shape)) for site in orig}
+        else:
+            return {site:(orig[site] - self.step_size * grad[site]) for site in orig}
 
     # Sample the momentum variables from a standard normal
     def sample_momentum(self, sample_name):
