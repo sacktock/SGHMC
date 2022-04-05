@@ -27,7 +27,6 @@ bnn/data
 *.figlist
 *.fdb_latexmk
 *.synctex.gz
-*.png
 *.djvu
 *.run.xml
 *.auxlock
