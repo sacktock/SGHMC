@@ -1,7 +1,6 @@
 import sys
 sys.path.append("..")
 
-from numpy import corrcoef
 import torch
 import numpy as np
 import pyro
@@ -10,37 +9,68 @@ from pyro.infer.mcmc.mcmc_kernel import MCMCKernel
 from pyro.ops.integrator import potential_grad
 from kernel.utils.main import initialize_model, observed_information
 from kernel.utils.param_tensor_corresponder import ParamTensorCorresponder
-from kernel.utils.dual_averaging_step_size import DualAveragingStepSize
 from collections import OrderedDict
 
 class SGHMC(MCMCKernel):
     """Stochastic Gradient Hamiltonian Monte Carlo kernel.
+
+    Implements SGHMC as described in [1]_. The basic algorithm is described in
+    Algorithm 2 there. The actual implementation uses the reparametrisation
+    described in the subsection 'CONNECTION TO SGD WITH MOMENTUM'.
+
+    The weight matrix is taken to be the identity.
+
+    The noise model is estimated using the observed information.
     
     Parameters
     ----------
+
+    model
+        The pyro model from which to sample.
+
     subsample_positions : list, default [0] / 1st positional argument only
         Specifies which positional arguments of the model to subsample during runtime
         
     batch_size : int, default=5
         The size of the minibatches to use
 
-    step_size : int, default 0.1
-        The size of a single step taken while simulating Hamiltonian dynamics
+    learning_rate : float, default=0.1
+        The learning rate of the algorithm, used analogously to that in
+        stochastic gradient descent. This value is the same as the square of
+        the step size parameter used in discretely simulating the Hamiltonian 
+        dynamics.
+
+    momentum_decay : float, default=0.01
+        The momentum decay rate, used analogously to that in stochastic 
+        gradient descent with momentum. The friction term `C` is related to 
+        this as:
+            momentum_decay = sqrt(momentum_decay) * I C
+        where I is the identity matrix.
 
     num_steps : int, default 10
-        The number of steps to simulate Hamiltonian dynamics
+        The number of steps to simulate Hamiltonian dynamics.
 
     resample_every_n : int, default 50
-        When to resmaple to momentum (deafult is to resample momentum every 50 samples)
+        When to resmaple to momentum (default is to resample momentum every 50 samples)
 
-    obs_info_noise : bool, default=True
+    obs_info_noise : bool, default=False
         Use the observed information to estimate the noise model
 
     compute_obs_info : string, default="every_sample", valid=["start", "every_sample", "every_step"]
         When to compute the observed information matrix to estimate B hat,
-        - "start" once at the begining using the inital parameters
+        - "start" once at the beginning using the initial parameters
         - "every_sample" once at the start of every sampling procedure
-        - "every_step" at every intehration step or when the parameters change
+        - "every_step" at every integration step or when the parameters change
+
+    device
+        The PyTorch device to use.
+
+
+    References
+    ----------
+    .. [1] Tianqi Chen, Emily B. Fox, Carlos Guestrin, "Stochastic Gradient 
+       Hamiltonian Monte Carlo", arXiv:1402.4102 [stat.ME],  	
+       https://doi.org/10.48550/arXiv.1402.4102
     """
 
     def __init__(self, 
@@ -55,6 +85,12 @@ class SGHMC(MCMCKernel):
                  compute_obs_info=None,
                  device=torch.device('cpu')
                  ):
+
+        # Check compute_obs_info is valid
+        try:
+            assert compute_obs_info in ["start", "every_sample", "every_step", None]
+        except AssertionError:
+            raise RuntimeError("Invalid input for compute_obs_info "+str(compute_obs_info))
       
         self.model = model
         self.subsample_positions = subsample_positions
@@ -92,16 +128,10 @@ class SGHMC(MCMCKernel):
                 raise RuntimeError("Positional argument {} is not a pytorch tensor with size attribute".format(pos))
             except AssertionError:
                 raise RuntimeError("Can't subsample arguments with different lengths")
-
-        # Check compute_obs_info is valid
-        try:
-            assert self.compute_obs_info in ["start", "every_sample", "every_step", None]
-        except AssertionError:
-            raise RuntimeError("Invalid input for compute_obs_info "+str(self.compute_obs_info))
                 
         # Compute the initial parameter and potential function from the model
-        # Use entire dataset to find initial parameters using pyros in-built search    
-        # if using cuda subsample instead - unlikeluy to be able to fit the entire dataset on the gpu
+        # Use entire dataset to find initial parameters using pyro's in-built search    
+        # if using cuda subsample instead - unlikely to be able to fit the entire dataset on the gpu
         if self.device.type=='cuda':
             model_args_lst = list(self.model_args).copy()
             
@@ -137,6 +167,9 @@ class SGHMC(MCMCKernel):
                     initial_params = self._initial_params
                 )
 
+            # Set up the corresponder between parameter dicts and tensors
+            self.corresponder.configure(initial_params)
+
             #initial_params = self.corresponder.wrap(initial_params)
 
             # Cache variables
@@ -151,8 +184,10 @@ class SGHMC(MCMCKernel):
                 # Set up the obs_info variable
                 self.obs_info = None
 
-        # Set up the corresponder between parameter dicts and tensors
-        self.corresponder.configure(self._initial_params)
+        else:
+
+            # Set up the corresponder between parameter dicts and tensors
+            self.corresponder.configure(self._initial_params)
 
         self._obs_info_arr = []
 
@@ -169,11 +204,14 @@ class SGHMC(MCMCKernel):
     # If with_friction adds additional update terms elementwise
     def _step_momentum(self, orig, grad):   
         fric = self._sample_friction(f"f_{self._step_count}")
-        return {site:(
-                      (1 - self.momentum_decay) * orig[site].view(grad[site].shape)
-                       - self.learning_rate * grad[site] + 
-                       fric[site].view(grad[site].shape)) 
-                for site in orig}
+        mom = {}
+        for site in orig:
+            mom[site] = (
+                (1 - self.momentum_decay) * orig[site].view(grad[site].shape)
+                - self.learning_rate * grad[site] 
+                + fric[site].view(grad[site].shape)
+            )
+        return mom
 
     # Sample the momentum variables from a standard normal
     def sample_momentum(self, sample_name):
@@ -255,7 +293,6 @@ class SGHMC(MCMCKernel):
         return self.corresponder.to_params(sample)
         
     # Update the position one step
-
     def update_position(self, theta, v):
         return self._step_position(theta, v)
 
@@ -295,7 +332,7 @@ class SGHMC(MCMCKernel):
 
         # Full-step position and momentum alternately
         for i in range(self.num_steps):
-            # Compute obs info evey leapfrog step
+            # Compute obs info every leapfrog step
             if self.obs_info_noise and self.compute_obs_info == "every_step":
                 self.obs_info = self.compute_observed_information(theta, nll_fn)
                 self._obs_info_arr += [self.obs_info]

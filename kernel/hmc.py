@@ -27,6 +27,10 @@ class HMC(MCMCKernel):
 
     do_step_size_adaptation : bool, default True
         Do step size adaptation during warm up phase
+
+    target_accept : int, default=0.8
+        The target acceptance probability to aim for when doing step size 
+        adaptation
     """
 
     def __init__(self, model, step_size=1, num_steps=10, do_step_size_adaptation=True, target_accept=0.8):

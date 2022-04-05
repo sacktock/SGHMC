@@ -10,7 +10,7 @@ import pyro.distributions as dist
 from collections import OrderedDict
 
 class SGLD(SGHMC):
-    """Stochastic Gradient with Langevin Dynamics
+    """Stochastic Gradient with Langevin Dynamics.
     
     Parameters
     ----------
@@ -94,7 +94,7 @@ class SGLD(SGHMC):
             self.obs_info = self.compute_observed_information(x, nll_fn)
 
         for i in range(self.num_steps):
-            # Compute obs info evey step
+            # Compute obs info every step
             if self.obs_info_noise and self.compute_obs_info == "every_step":
                 self.obs_info = self.compute_observed_information(x, nll_fn)
             # Step position variable using gradient plus Langevin dynamics

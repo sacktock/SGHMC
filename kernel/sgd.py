@@ -12,7 +12,7 @@ from kernel.utils.param_tensor_corresponder import ParamTensorCorresponder
 from collections import OrderedDict
 
 class SGD(MCMCKernel):
-    """Stochastic Gradient Descent
+    """Stochastic Gradient Descent.
     
     Parameters
     ----------
@@ -22,8 +22,8 @@ class SGD(MCMCKernel):
     batch_size : int, default=5
         The size of the minibatches to use
 
-    step_size : int, default 0.1
-        Analagous to learning rate
+    learning_rate : float, default=0.1
+        The learning rate to use.
 
     weight_decay: float, default 0.0
         L2 weight penalisation
@@ -31,7 +31,7 @@ class SGD(MCMCKernel):
     with_momentum : bool, default=False
         Use Nesterov's momentum during parameter updates
 
-    alpha : float, default=True
+    momentum_decay : float, default=0.75
         Momentum hyperparameter indicting how much to weight momentum in favor of gradient
     """
 
@@ -169,7 +169,7 @@ class SGD(MCMCKernel):
         if self._momentum is not None:
             v = self._momentum
         else:
-            v = self._momentum = self.corresponder.to_params(torch.zeros(self.corresponder.total_size))
+            v = self._momentum = self.corresponder.zeros_params()
 
         if self.with_momentum:
             v = self.update_momentum(v, grad)
