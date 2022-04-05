@@ -4,7 +4,13 @@ import pyro
 import pyro.distributions as dist
 
 class ParamTensorCorresponder():
-    """A class for converting between dicts of parametes and tenors."""
+    """A class for converting between dicts of parametes and tenors.
+    
+    In Pyro, we work with dictionaries of named parameters, whose values are
+    PyTorch tensors. Sometimes we need to convert these to flat 1D tensors by
+    concatenation, and back again. This class allows this process to be done 
+    consistently.
+    """
 
     def __init__(self):
         pass
@@ -42,7 +48,7 @@ class ParamTensorCorresponder():
         return torch.block_diag(*block_list)
 
     def wrap(self, params):
-        """removes all dimensions with size 1 from dictionary of parameters apart from the first dimension"""
+        """Remove all dimensions with size 1 from dictionary of parameters apart from the first dimension"""
         for name in self._site_names:
             params[name] = params[name].squeeze().unsqueeze(0)
 
