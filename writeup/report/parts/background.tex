@@ -2,8 +2,35 @@
 
 \section{Background}
 
-\begin{itemize}
-    \item Hamiltonian Monte Carlo.
-    \item Naïve Stochastic Gradient HMC.
-    \item SGHMC using friction.
-\end{itemize}
+Hamiltonian Monte Carlo (HMC) (\cite{duane-hmc,neal-hmc}) is a Markov Chain Monte Carlo (MCMC) sampling algorithm. Given a target probability distribution — in our case the posterior distribution of a set of variables $\theta$ given independent observations $x \in \D$ — it produces samples by carrying out a random walk over the parameter space using Hamiltonian dynamics.
+
+To begin with prior distribution $p(\theta)$ and likelihood $p(x \mid \theta)$. Using these we define the \emph{potential energy} function $U$:
+\begin{equation*}
+    U \defeq - \sum_{x \in \D}\log p(x \mid \theta) - \log p(\theta)
+\end{equation*}
+Note that, using Bayes' rule, we have that the posterior $p(\theta \mid \D) \propto \exp(-U)$. Hamiltonian dynamics introduces an auxiliary set of momentum variables $r$. These dynamics have a physical interpretation in which an object moves about a landscape determined by $U$. We let this object have \emph{mass matrix} $M$. Then $U$ represents the potential energy of the object, and its kinetic energy is given by $\frac 1 2 r^{\mathsf T} M^{-1} r$. The development of the system is governed by the following equations.
+\begin{align*}
+    \dif\theta &= M^{-1}r \dif t \\
+    \dif r &= - \nabla U(\theta) \dif t
+\end{align*}
+
+To simulate these continuous dynamics in practice, we must use a discretised version of these equations. To correct for the inaccuracies introduced by doing so, it is necessary to make a \emph{Metropolis-Hastings correction}. A simple algorithm is given in \cref{alg:hmc}.\fxnote{Define $H$}
+
+\begin{algorithm}
+    \caption{A simple HMC algorithm}\label{alg:hmc}
+    \begin{algorithmic}
+        \For{$t = 1,2, \ldots$}
+            \State $r \sim \mc N(0,1)$ \Comment{Resample momentum}
+            \State $(\theta_0, r_0) = (\theta, r)$ 
+            \For{$i = 1$ to $m$}
+                \State $\theta \gets \theta + \ep M^{-1}r$
+                \State $r \gets r - \ep \nabla U(\theta)$
+            \EndFor
+            \State $u \sim \rm{Uniform}[0,1]$
+            \State $\rho = \exp(H(\theta, r) - H(\theta_0, r_0))$ \Comment{Acceptance probability}
+            \If{$u > \min(1, \rho)$} \Comment{Only accept new state with probability $\rho$}
+                \State $\theta = \theta_0$
+            \EndIf
+        \EndFor
+    \end{algorithmic}
+\end{algorithm}
