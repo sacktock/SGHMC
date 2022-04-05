@@ -167,6 +167,10 @@ class SGHMC(MCMCKernel):
                     initial_params = self._initial_params
                 )
 
+            # Make sure the initial params reside on the correct device
+            for name in initial_params:
+                initial_params[name] = initial_params[name].to(self.device)
+
             # Set up the corresponder between parameter dicts and tensors
             self.corresponder.configure(initial_params)
 
@@ -186,6 +190,10 @@ class SGHMC(MCMCKernel):
 
         else:
 
+            # Make sure the initial params reside on the correct device
+            for name in self._initial_params:
+                self._initial_params[name] = self._initial_params[name].to(self.device)
+
             # Set up the corresponder between parameter dicts and tensors
             self.corresponder.configure(self._initial_params)
 
@@ -196,7 +204,7 @@ class SGHMC(MCMCKernel):
 
     # Computes orig + step * mom elementwise, where orig and mom are
     # dictionaries with the same keys
-    def _step_position(self, orig, mom): 
+    def _step_position(self, orig, mom):
         return {site:(orig[site] + mom[site].view(orig[site].shape)) for site in orig}
         
     # Computes orig + step * grad elementwise, where orig and grad are
@@ -278,7 +286,7 @@ class SGHMC(MCMCKernel):
 
         # Only use the noise term if we have computed it from the observed
         # information
-        if self.obs_info_noise:
+        if self.obs_info_noise and self.obs_info is not None:
             noise_term = torch.diagonal(0.5 * self.learning_rate * self.obs_info).to(self.device)
         else:
             noise_term = torch.zeros(self.corresponder.total_size).to(self.device)
