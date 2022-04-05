@@ -8,13 +8,17 @@ To begin with prior distribution $p(\theta)$ and likelihood $p(x \mid \theta)$. 
 \begin{equation*}
     U \defeq - \sum_{x \in \D}\log p(x \mid \theta) - \log p(\theta)
 \end{equation*}
-Note that, using Bayes' rule, we have that the posterior $p(\theta \mid \D) \propto \exp(-U)$. Hamiltonian dynamics introduces an auxiliary set of momentum variables $r$. These dynamics have a physical interpretation in which an object moves about a landscape determined by $U$. We let this object have \emph{mass matrix} $M$. Then $U$ represents the potential energy of the object, and its kinetic energy is given by $\frac 1 2 r^{\mathsf T} M^{-1} r$. The development of the system is governed by the following equations.
+Note that, using Bayes' rule, we have that the posterior $p(\theta \mid \D) \propto \exp(-U)$. Hamiltonian dynamics introduces an auxiliary set of momentum variables $r$. These dynamics have a physical interpretation in which an object moves about a landscape determined by $U$. We let this object have \emph{mass matrix} $M$. Then $U(\theta)$ represents the potential energy of the object, and its kinetic energy is given by $\frac 1 2 r^{\mathsf T} M^{-1} r$. The total energy of the system is a quantity known as the \emph{Hamiltonian function}:
+\begin{equation*}
+    H(\theta, r) = U(\theta) + \frac 1 2 r^{\mathsf T} M^{-1} r
+\end{equation*}
+The development of the system is governed by the following equations.
 \begin{align*}
     \dif\theta &= M^{-1}r \dif t \\
     \dif r &= - \nabla U(\theta) \dif t
 \end{align*}
 
-To simulate these continuous dynamics in practice, we must use a discretised version of these equations. To correct for the inaccuracies introduced by doing so, it is necessary to make a \emph{Metropolis-Hastings correction}. A simple algorithm is given in \cref{alg:hmc}.\fxnote{Define $H$}
+To simulate these continuous dynamics in practice, we must use a discretised version of these equations. To correct for the inaccuracies introduced by doing so, it is necessary to make a \emph{Metropolis-Hastings correction step}. A simple algorithm is given in \cref{alg:hmc}.
 
 \begin{algorithm}
     \caption{A simple HMC algorithm}\label{alg:hmc}
@@ -34,3 +38,7 @@ To simulate these continuous dynamics in practice, we must use a discretised ver
         \EndFor
     \end{algorithmic}
 \end{algorithm}
+
+In practice, the dataset $\D$ may be large, and so running \cref{alg:hmc} may be computationally expensive. One idea to combat this is to simulate the Hamiltonian system using only a subset of the data at a time, in analogy with stochastic gradient descent. Unfortunately, such a dynamical system can diverge quite rapidly from the true posterior distribution \cite{neal-hmc}, which necessitates frequent Metropolis-Hastings steps. Such steps must be carried out using the whole dataset.
+
+The method `Stochastic Gradient Hamiltonian Monte Carlo' proposed in \cite{sghmc} addresses this shortcoming. The idea is to incorporate friction into the dynamical system, which works to counteract the noise introduced by selecting a subset of the data.
