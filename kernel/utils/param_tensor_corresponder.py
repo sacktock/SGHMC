@@ -54,6 +54,14 @@ class ParamTensorCorresponder():
 
         return params
 
+    def zeros_params(self):
+        """Return a params dict full of zeros."""
+        return self.to_params(torch.zeros(self.total_size))
+
+    def ones_params(self):
+        """Return a params dict full of ones."""
+        return self.to_params(torch.ones(self.total_size))
+
     @property
     def site_sizes(self):
         return self._site_sizes

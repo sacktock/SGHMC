@@ -169,7 +169,7 @@ class SGD(MCMCKernel):
         if self._momentum is not None:
             v = self._momentum
         else:
-            v = self._momentum = self.corresponder.to_params(torch.zeros(self.corresponder.total_size))
+            v = self._momentum = self.corresponder.zeros_params()
 
         if self.with_momentum:
             v = self.update_momentum(v, grad)
