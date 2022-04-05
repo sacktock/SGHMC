@@ -167,6 +167,9 @@ class SGHMC(MCMCKernel):
                     initial_params = self._initial_params
                 )
 
+            # Set up the corresponder between parameter dicts and tensors
+            self.corresponder.configure(initial_params)
+
             #initial_params = self.corresponder.wrap(initial_params)
 
             # Cache variables
@@ -181,8 +184,10 @@ class SGHMC(MCMCKernel):
                 # Set up the obs_info variable
                 self.obs_info = None
 
-        # Set up the corresponder between parameter dicts and tensors
-        self.corresponder.configure(self._initial_params)
+        else:
+
+            # Set up the corresponder between parameter dicts and tensors
+            self.corresponder.configure(self._initial_params)
 
         self._obs_info_arr = []
 

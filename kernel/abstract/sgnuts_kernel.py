@@ -134,6 +134,9 @@ class SGHMC_for_NUTS(SGHMC):
                     self.model_kwargs,
                     initial_params = self._initial_params
                 )
+
+            # Set up the corresponder between parameter dicts and tensors
+            self.corresponder.configure(initial_params)
             
             # Cache variables
             self.initial_params = initial_params
@@ -148,8 +151,10 @@ class SGHMC_for_NUTS(SGHMC):
                 # Set up the obs_info variable
                 self.obs_info = None
 
-        # Set up the corresponder between parameter dicts and tensors
-        self.corresponder.configure(self.initial_params)
+        else:
+
+            # Set up the corresponder between parameter dicts and tensors
+            self.corresponder.configure(self.initial_params)
 
         # Set the step counter to 0
         self._step_count = 0
