@@ -16,10 +16,12 @@ class ParamTensorCorresponder():
         pass
 
     def configure(self, initial_params):
-        """Use the inital parameters to set up the corresponder."""
+        """Use the initial parameters to set up the corresponder."""
         self._site_names = sorted(initial_params.keys())
+        self._site_shapes = {}
         self._site_sizes = {}
         for name in self._site_names:
+            self._site_shapes[name] = initial_params[name].shape
             self._site_sizes[name] = initial_params[name].numel()
         self._total_size = sum(self._site_sizes.values())
 
@@ -35,8 +37,10 @@ class ParamTensorCorresponder():
         params = {}
         tensor_pos = 0
         for name in self._site_names:
+            shape = self._site_shapes[name]
             size = self._site_sizes[name]
-            params[name] = tensor[tensor_pos:tensor_pos+size]
+            flattened = tensor[tensor_pos:tensor_pos + size]
+            params[name] = flattened.detach().reshape(shape)
             tensor_pos += size
         return params
 
@@ -61,6 +65,10 @@ class ParamTensorCorresponder():
     def ones_params(self):
         """Return a params dict full of ones."""
         return self.to_params(torch.ones(self.total_size))
+
+    @property
+    def site_shapes(self):
+        return self._site_shapes
 
     @property
     def site_sizes(self):
