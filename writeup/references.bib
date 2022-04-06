@@ -41,3 +41,21 @@
   url       = {https://proceedings.mlr.press/v32/cheni14.html},
   abstract  = {Hamiltonian Monte Carlo (HMC) sampling methods provide a mechanism for defining distant proposals with high acceptance probabilities in a Metropolis-Hastings framework, enabling more efficient exploration of the state space than standard random-walk proposals.  The popularity of such methods has grown significantly in recent years.  However, a limitation of HMC methods is the required gradient computation for simulation of the Hamiltonian dynamical system-such computation is infeasible in problems involving a large sample size or streaming data. Instead, we must rely on a noisy gradient estimate computed from a subset of the data.  In this paper, we explore the properties of such a stochastic gradient HMC approach. Surprisingly, the natural implementation of the stochastic approximation can be arbitrarily bad.  To address this problem we introduce a variant that uses second-order Langevin dynamics with a friction term that counteracts the effects of the noisy gradient, maintaining the desired target distribution as the invariant distribution.  Results on simulated data validate our theory.  We also provide an application of our methods to a classification task using neural networks and to online Bayesian matrix factorization.}
 }
+
+@misc{sgld-fisher,
+  doi = {10.48550/ARXIV.1206.6380},
+  
+  url = {https://arxiv.org/abs/1206.6380},
+  
+  author = {Ahn, Sungjin and Korattikara, Anoop and Welling, Max},
+  
+  keywords = {Machine Learning (cs.LG), Computation (stat.CO), Machine Learning (stat.ML), FOS: Computer and information sciences, FOS: Computer and information sciences},
+  
+  title = {Bayesian Posterior Sampling via Stochastic Gradient Fisher Scoring},
+  
+  publisher = {arXiv},
+  
+  year = {2012},
+  
+  copyright = {arXiv.org perpetual, non-exclusive license}
+}
