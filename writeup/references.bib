@@ -41,3 +41,19 @@
   url       = {https://proceedings.mlr.press/v32/cheni14.html},
   abstract  = {Hamiltonian Monte Carlo (HMC) sampling methods provide a mechanism for defining distant proposals with high acceptance probabilities in a Metropolis-Hastings framework, enabling more efficient exploration of the state space than standard random-walk proposals.  The popularity of such methods has grown significantly in recent years.  However, a limitation of HMC methods is the required gradient computation for simulation of the Hamiltonian dynamical system-such computation is infeasible in problems involving a large sample size or streaming data. Instead, we must rely on a noisy gradient estimate computed from a subset of the data.  In this paper, we explore the properties of such a stochastic gradient HMC approach. Surprisingly, the natural implementation of the stochastic approximation can be arbitrarily bad.  To address this problem we introduce a variant that uses second-order Langevin dynamics with a friction term that counteracts the effects of the noisy gradient, maintaining the desired target distribution as the invariant distribution.  Results on simulated data validate our theory.  We also provide an application of our methods to a classification task using neural networks and to online Bayesian matrix factorization.}
 }
+
+@inproceedings{sgld,
+  title={Bayesian learning via stochastic gradient Langevin dynamics},
+  author={Welling, Max and Teh, Yee W},
+  booktitle={Proceedings of the 28th international conference on machine learning (ICML-11)},
+  pages={681--688},
+  year={2011},
+  organization={Citeseer}
+}
+
+@article{hands-on-bnn,
+  title={Hands-on Bayesian neural networks--a tutorial for deep learning users},
+  author={Jospin, Laurent Valentin and Buntine, Wray and Boussaid, Farid and Laga, Hamid and Bennamoun, Mohammed},
+  journal={arXiv preprint arXiv:2007.06823},
+  year={2020}
+}

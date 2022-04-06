@@ -3,6 +3,7 @@ __pycache__
 .vscode
 *.code-workspace
 bnn/data
+bnn/bnn_fashion.ipynb
 
 *.log
 *.aux
