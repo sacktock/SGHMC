@@ -57,3 +57,53 @@
   journal={arXiv preprint arXiv:2007.06823},
   year={2020}
 }
+
+@misc{sgld-fisher,
+  doi = {10.48550/ARXIV.1206.6380},
+  
+  url = {https://arxiv.org/abs/1206.6380},
+  
+  author = {Ahn, Sungjin and Korattikara, Anoop and Welling, Max},
+  
+  keywords = {Machine Learning (cs.LG), Computation (stat.CO), Machine Learning (stat.ML), FOS: Computer and information sciences, FOS: Computer and information sciences},
+  
+  title = {Bayesian Posterior Sampling via Stochastic Gradient Fisher Scoring},
+  
+  publisher = {arXiv},
+  
+  year = {2012},
+  
+  copyright = {arXiv.org perpetual, non-exclusive license}
+}
+
+@inproceedings{nuts,
+  title     = {The No-U-Turn Sampler: Adaptively Setting Path Lengths in Hamiltonian Monte Carlo},
+  author    = {Hoffman, Matthew and Gelman, Andrew},
+  year      = {2011},
+  pdf       = {https://arxiv.org/pdf/1111.4246.pdf},
+  url       = {https://arxiv.org/abs/1111.4246},
+  abstract  = {Hamiltonian Monte Carlo (HMC) is a Markov chain Monte Carlo (MCMC) algorithm that avoids the random walk behavior and sensitivity to correlated parameters that plague many MCMC methods by taking a series of steps informed by first-order gradient information. These features allow it to converge to high-dimensional target distributions much more quickly than simpler methods such as random walk Metropolis or Gibbs sampling. However, HMC's performance is highly sensitive to two user-specified parameters: a step size {\epsilon} and a desired number of steps L. In particular, if L is too small then the algorithm exhibits undesirable random walk behavior, while if L is too large the algorithm wastes computation. We introduce the No-U-Turn Sampler (NUTS), an extension to HMC that eliminates the need to set a number of steps L. NUTS uses a recursive algorithm to build a set of likely candidate points that spans a wide swath of the target distribution, stopping automatically when it starts to double back and retrace its steps. Empirically, NUTS perform at least as efficiently as and sometimes more efficiently than a well tuned standard HMC method, without requiring user intervention or costly tuning runs. We also derive a method for adapting the step size parameter {\epsilon} on the fly based on primal-dual averaging. NUTS can thus be used with no hand-tuning at all. NUTS is also suitable for applications such as BUGS-style automatic inference engines that require efficient "turnkey" sampling algorithms.}
+}
+
+@inproceedings{nuts_code,
+  title     = {Pyro NUTS Code},
+  url       = {https://docs.pyro.ai/en/stable/_modules/pyro/infer/mcmc/nuts.html}
+}
+
+@article{pyro,
+author = {Bingham, Eli and Chen, Jonathan P. and Jankowiak, Martin and Obermeyer, Fritz and Pradhan, Neeraj and Karaletsos, Theofanis and Singh, Rohit and Szerlip, Paul and Horsfall, Paul and Goodman, Noah D.},
+title = {Pyro: Deep Universal Probabilistic Programming},
+year = {2019},
+issue_date = {January 2019},
+publisher = {JMLR.org},
+volume = {20},
+number = {1},
+issn = {1532-4435},
+abstract = {Pyro is a probabilistic programming language built on Python as a platform for developing advanced probabilistic models in AI research. To scale to large data sets and high-dimensional models, Pyro uses stochastic variational inference algorithms and probability distributions built on top of PyTorch, a modern GPU-accelerated deep learning framework. To accommodate complex or model-specific algorithmic behavior, Pyro leverages Poutine, a library of composable building blocks for modifying the behavior of probabilistic programs.},
+journal = {J. Mach. Learn. Res.},
+month = {jan},
+pages = {973–978},
+numpages = {6},
+keywords = {deep learning, approximate Bayesian inference, graphical models, generative models, probabilistic programming}
+}
+

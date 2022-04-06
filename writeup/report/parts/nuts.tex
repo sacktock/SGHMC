@@ -1,13 +1,16 @@
-
 \section{NUTS}
 
-In our current description of the SGHMC algorithm we have the user-defined hyperparameter $L$, the number of steps iterated over before we take a sample. If this number is too small, our samples will be correlated, and hence successive samples would appear to follow a random walk, and we would get slow mixing times. We demonstrate this behaviour by training 3 versions of SGHMC with $L=1,3,5$ (with $\epsilon L$ fixed). The learning curves below show that increasing $L$ increases performance.
+In our current description of the SGHMC algorithm we have the user-defined hyperparameter $L$, the number of steps iterated over before we take a sample. If this number is too small, our samples will be correlated, and hence successive samples would appear to follow a random walk, and we would get slow mixing times. We demonstrate this behaviour by training 3 versions of SGHMC with $L=1,3,5$ (with $\epsilon L$ fixed). The learning curves below show that increasing $L$ increases the speed with which SGHMC reaches low error rates.
 
-\includegraphics{Changing_L}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=100mm]{parts/Images/changing_num_steps.png}
+\caption{Changing the number of steps per sample. Each agent was run for 100 warmup epochs.}
+\end{figure}
 
 However, if $L$ is too large we waste computational power, as we continue to step through time even though each sample is already independent of the last. We would like to set $L$ to its optimal value.
 
-Hoffman and Gelman introduce the algorithm NUTS in their paper "The No-U-Turn Sampler: Adaptively Setting Path Lengths in Hamiltonian Monte Carlo". In its basic form this algorithm removes the need for a user to input a value for $L$ in the standard HMC implementation. We converted this NUTS algorithm from being based on HMC to being based on SGHMC, and investigated its power. We will begin by presenting the high level overview of the original NUTS algorithm for HMC sampling.
+Hoffman and Gelman introduce the algorithm NUTS in their paper "The No-U-Turn Sampler: Adaptively Setting Path Lengths in Hamiltonian Monte Carlo" \cite{nuts}. In its basic form this algorithm removes the need for a user to input a value for $L$ in the standard HMC implementation. We converted this NUTS algorithm from being based on HMC to being based on SGHMC, and investigated its power. We will begin by presenting the high level overview of the original NUTS algorithm for HMC sampling.
 
 The key idea is the concept of a 'U-Turn'. This is the point at which the samples of $\theta$ start to get closer to the initial value of $\theta$, rather than away from it. This marks the point at which further steps will likely only waste computational power. Mathematically, for current position $\theta$, initial position $\theta_0$ and momentum $r$, this corresponds to the time at which 
 
@@ -64,7 +67,7 @@ The benefit to this algorithm is that it removes the need to set the number of s
 There were some doubts as to whether the NUTS algorithm would work when using SGHMC steps instead of HMC steps. This was because NUTS requires the ability to step backwards in time, while an SGHMC step includes an injection of stochastic noise. As there is no action that undoes this injection, there was a worry that the backwards step through time in NUTS would become a problem. We explain how we attempted to solve this problem at the end of the next section.
 
 \subsection{Implementation of SGNUTS}
-To build SGNUTS we started with the Pyro source code for NUTS \cite{NUTS} which takes the Pyro HMC class as its parent. We altered this to instead inherit from our SGHMC class. This required removing step-size adaptation and mass matrix adaptation functionality from NUTS, as our implementation of SGHMC was not able to interface with this. It also required introducing some caching methods into the SGHMC class - to help keep things simple in our original SGHMC class we did this in a new class, named SGHMC\_for\_NUTS. Most importantly, we had to alter the $(\theta,v)$ step update rule which is hardcoded in NUTS. This meant that instead of being the HMC update step it was now the SGHMC update step of:
+To build SGNUTS we started with the Pyro source code for NUTS \cite{nuts_code} which takes the Pyro HMC class as its parent. We altered this to instead inherit from our SGHMC class. This required removing step-size adaptation and mass matrix adaptation functionality from NUTS, as our implementation of SGHMC was not able to interface with this. It also required introducing some caching methods into the SGHMC class - to help keep things simple in our original SGHMC class we did this in a new class, named SGHMC\_for\_NUTS. Most importantly, we had to alter the $(\theta,v)$ step update rule which is hardcoded in NUTS. This meant that instead of being the HMC update step it was now the SGHMC update step of:
 
 $$
     \theta \leftarrow 
@@ -87,16 +90,21 @@ In particular, note that there is an injection of stochastic noise and momentum-
 
 \subsection{Results} 
 
-We tested the SGNUTS algorithm on the BNNs described earlier. The results were as follows:
+We tested the SGNUTS algorithm on the BNNs described earlier. We ran SGNUTS for only 20 warmup epoch and 50 epochs as the code was slower than SGHMC to run. The learning curves were as follows:
 
-\includegraphics{SGNUTS_MNIST}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=70mm]{parts/Images/SGNUTS_MNIST.png}
+\includegraphics[width=75mm]{parts/Images/SGNUTS_Fashion.png}
+\caption{Classifying MNIST and FashionMNIST with SGNUTS}
+\end{figure}
 
-This accuracy demonstrates that there is convergence to the true posterior in SGNUTS. This suggests that, like SGHMC itself, the SGNUTS Markov Chain is likely reversible in some (non traditional) sense. Denoting the posterior as $\pi(\theta, r)$, and transition kernels as $P(\theta, r| \theta', r')$, it is shown in \cite{} that SGHMC satisfies
+The final accuracies were 0.94 for MNIST and 0.85 for FashionMNIST which are similar to the accuracies obtained using SGNUTS (0.97 and 0.86 respectively). This accuracy demonstrates that there is convergence to the true posterior in SGNUTS. This suggests that, like SGHMC itself, the SGNUTS Markov Chain is likely reversible in some (non traditional) sense. Denoting the posterior as $\pi(\theta, r)$, and transition kernels as $P(\theta, r| \theta', r')$, it is shown in (\cite{sghmc}) that SGHMC satisfies
 $$ \pi(\theta,r)P_{SGHMC}(\theta,r|\theta',r') = \pi(\theta',-r')P_{SGHMC}(\theta',-r'|\theta,-r)$$
 
 and it is suggested that this is the reason why the SGHMC algorithm works, despite not being reversible in the traditional sense. It would be interesting to consider if a similar property holds for $P_{SGNUTS}$.
 
-While accurate, SGNUTS appears to not be quite as accurate as SGHMC. It also is relatively slow to perform a single sample. Hence SGNUTS is generally weaker than SGHMC. There is one area in which SGNUTS stands out however - it reaches relatively high accuracy in a short amount of time. We measured the accuracy after the first epoch of SGHMC and NUTS as we changed the number of warmup epochs, and we measured how long they took to train.
+While accurate, SGNUTS is slower to run than SGHMC to produce a single sample. It does however reach relatively high accuracies in a short amount of time. We measured the accuracy after the first epoch of SGHMC and NUTS as we changed the number of warmup epochs, and we measured how long they took to train.
 
 \begin{center}
 \begin{tabular}{ccccc} 
