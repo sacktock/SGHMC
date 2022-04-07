@@ -4,7 +4,7 @@
 
 Hamiltonian Monte Carlo (HMC) methods already provide a way to sample from a posterior distribution. These methods use all data available to them to produce a potential energy function:
 \begin{equation*}
-    U(\theta) = - \sum_{x\in\mathcal{D}}\text{log}p(x| \theta) - \text{log}p(\theta ) \propto -\text{log}p(\theta | \mathcal{D})
+    U(\theta) = - \sum_{x\in\mathcal{D}}\log p(x| \theta) - \log p(\theta ) \propto -\log p(\theta | \mathcal{D})
 \end{equation*}
 which, along with $\nabla U(\theta)$, is sufficient to sample from the posterior (as will be discussed in the background section). Computing $U(\theta)$ and $\nabla U(\theta)$ can be computationally expensive for large datasets, and so research into Stochastic Gradient Hamiltonian Monte Carlo (SGHMC) methods began with \cite{sghmc}, which use subsets of the data to produce noisy estimates of $U(\theta)$ and $\nabla U(\theta)$. We decided to investigate the paper that introduced SGHMC. It starts with a description of HMC, and then introduces a Naïve SGHMC algorithm. It then goes on to introduce SGHMC (the main algorithm), and then it runs a number of experiments using these algorithms.
 
