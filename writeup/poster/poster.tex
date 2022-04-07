@@ -87,7 +87,7 @@
 		\column{0.5}
 		
 		\block{The Core Algorithms}{
-		The first three are sampling based methods - we sample parameters $\theta$ from a model's posterior. We write here the transition step that, upon iterating, gives us $\theta \sim p(\theta | \mathcal{D})$, where $\mathcal{D}$ is all the data available to us. $\tilde{\mathcal{D}}$ is a randomly sampled batch of this data. \\
+		The first four are sampling based methods - we sample parameters $\theta$ from a model's posterior. We write here the transition step that, upon iterating, gives us $\theta \sim p(\theta | \mathcal{D})$, where $\mathcal{D}$ is all the data available to us. $\tilde{\mathcal{D}}$ is a randomly sampled batch of this data. \\
 		
 		\innerblock{Hamiltonian Monte Carlo (HMC)}{
 		$$\Delta \theta \leftarrow \epsilon M^{-1}r \qquad \Delta r \leftarrow - \epsilon \nabla U(\theta)$$
@@ -99,16 +99,18 @@
 		\innerblock{Stochastic Gradient Hamiltonian Monte Carlo (SGHMC)}{$$\Delta \theta \leftarrow \epsilon M^{-1}r \qquad \Delta r \leftarrow - \epsilon \nabla \tilde{U}(\theta) - \epsilon C M^{-1} r + \mathcal{N}(0,2 (C-\hat{B})\epsilon)$$
 		where $$ \tilde{U}(\theta) = - \frac{|\mathcal{D}|}{|{\tilde{\mathcal{D}}}|}\sum_{x \in \tilde{\mathcal{D}}} \nabla \log p(x \mid \theta) - \nabla \log p(\theta)$$
 		and $\hat{B}$ is an estimation of the noise covariance $B$ encapsulated by $\nabla \tilde{U}(\theta) = \nabla U(\theta) + \mathcal{N}(0,2 B\epsilon)$, and $C$ is a hyperparameter}
+
+		\innerblock{Stochastic Gradient Langevin Dynamics (SGLD)}{$$\Delta \theta \leftarrow - \eta \nabla U(\theta) + \mathcal{N}(0,B)$$
 		
-		The next two are optimization based methods, which produce $\theta$ that are at the mode of the posterior distribution - MAP estimates. \\
+		where $B$ is the covariance of injected noise.}
+		
+		The next one is an optimization based method, which produces $\theta$ that are at the mode of the posterior distribution - MAP estimates. \\
 		
 		\innerblock{Stochastic Gradient Descent (SGD)}{$$\Delta \theta \leftarrow  \alpha \Delta \theta - \eta \nabla U(\theta)$$
 		
 		where $\alpha$ is a momentum hyperparameter. Standard SGD sets $\alpha=0$} 
 		
-		\innerblock{Stochastic Gradient Langevin Dynamics (SGLD)}{$$\Delta \theta \leftarrow - \eta \nabla U(\theta) + \mathcal{N}(0,B)$$
-		
-		where $B$ is the covariance of injected noise.}}
+	}
 		
 		\block{SGNUTS}{'Stochastic Gradient No U-Turn Sampler' (SGNUTS) is our novel algorithm based on the 'No U-Turn Sampler' (NUTS) produced in \cite{nuts}. NUTS removes the need for the user to pre-set the number of steps HMC performs before taking a sample. We produced SGNUTS to do the same for SGHMC. At its core, it works by repeatedly performing SGHMC steps either forward or backward in time until a 'U-turn' is seen. This is when a further step backwards in time would cause the earliest sample in the trajectory to get closer to the latest sample, or a step forwards in time would cause the latest sample to get closer to the earliest sample. It reached accuracies of 0.94 on MNIST and 0.85 on FashionMNIST, which is similar to SGHMC (accuracies of 0.97 and 0.85 respectively). SGNUTS reaches the posterior faster than SGHMC, taking 28s to reach an accuracy of 0.87, compared to SGHMC taking 50s to reach 0.89. When at the posterior, SGNUTS takes longer than SGHMC to sample from it however.
 		
