@@ -1,3 +1,6 @@
+# Pyro source code modified from
+#https://docs.pyro.ai/en/stable/_modules/pyro/infer/mcmc/util.html
+
 # Copyright (c) 2017-2019 Uber Technologies, Inc.
 # SPDX-License-Identifier: Apache-2.0
 

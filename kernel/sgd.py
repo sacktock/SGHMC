@@ -31,7 +31,7 @@ class SGD(MCMCKernel):
     with_momentum : bool, default=False
         Use Nesterov's momentum during parameter updates
 
-    momentum_decay : float, default=0.75
+    momentum_decay : float, default=0.01
         Momentum hyperparameter indicting how much to weight momentum in favor of gradient
     """
 
@@ -41,8 +41,8 @@ class SGD(MCMCKernel):
                  batch_size=5, 
                  learning_rate=0.1, 
                  weight_decay=0.0,
-                 with_momentum=True,
-                 momentum_decay=0.75):
+                 with_momentum=False,
+                 momentum_decay=0.01):
 
         self.model = model
         self.subsample_positions = subsample_positions
