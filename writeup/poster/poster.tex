@@ -1,4 +1,4 @@
-\documentclass[25pt,a0paper]{tikzposter}
+\documentclass[20pt,a0paper]{tikzposter}
 
 % Suppress some useless warnings
 \usepackage{silence}
@@ -47,7 +47,7 @@
 		\column{0.4}
 		
 	\block{Stochastic Gradient Hamiltonian Monte Carlo}{
-		Hamiltonian Monte Carlo (HMC) already provides a way to sample from a posterior distribution, however it uses all data available to it, which can be computationally expensive for large datasets. This motivated the production of the Stochastic Gradient Hamiltonian Monte Carlo algorithm (SGHMC), which is introduced in \cite{sghmc}. It uses batch data to produce noisy estimates of a potential function to, which gives SGHMC dramatic speed-up when compared to HMC. In this paper, Chen et al introduce a Naive SGHMC algorithm, as well as SGHMC itself. They demonstrate links between SGHMC and both Stochastic Gradient Descent with momentum, and Stochastic Gradient Langevin Dynamics. They then run experiments using SGHMC. We reproduced SGHMC, and replicated a number of Chen et al's experiments. The repository for our code is found at https://github.com/sacktock/SGHMC.
+		Hamiltonian Monte Carlo (HMC) provides a way to sample from a posterior distribution using all data available to it. To do this it must produce the potential function $U(\theta) \propto \log p(\theta | \mathcal{D})$, as well as its gradient. Using all of the data to find $U(\theta)$ is computationally expensive for large datasets, rendering HMC useless. This motivated the production of the Stochastic Gradient Hamiltonian Monte Carlo algorithm (SGHMC), which is introduced in \cite{sghmc}. It uses batch data to produce noisy estimates of the potential function, which gives SGHMC dramatic speed-up when compared to HMC. In this paper, Chen et al introduce a Naive SGHMC algorithm, as well as SGHMC itself. They demonstrate links between SGHMC and both Stochastic Gradient Descent with momentum, and Stochastic Gradient Langevin Dynamics. They then run experiments using SGHMC. We reproduced SGHMC, and replicated a number of Chen et al's experiments. The repository for our code is found at https://github.com/sacktock/SGHMC.
 		
 
 		
@@ -55,17 +55,22 @@
 	%%% Second column %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	   \column{0.6}
 		
-	\block{Our Reproduction}{
+	\block{Our Reproduction and Extensions}{
 	We reproduced the following experiments from the paper: \\
 \begin{itemize}
     \item Sampling $\theta$ from the posterior with $U(\theta) = -2\theta^2 + \theta^4$ using HMC, Naive SGHMC and SGHMC
-    \item Sampling $(\theta,r)$ generated from $U(\theta) = \frac{1}{2}\theta^2$ with HMC, and from $U(\theta) = \frac{1}{2}\theta^2 + \mathcal{N}(0,4)$ as a proxy for SGHMC
+    \item Sampling $(\theta,r)$ generated from $U(\theta) = \frac{1}{2}\theta^2$ with HMC, and from $U(\theta) = \frac{1}{2}\theta^2 + \mathcal{N}(0,4)$ as a proxy for the noisy $\tilde{U}(\theta)$ in SGHMC
     \item Classifying the MNIST dataset using SGHMC as well as with SGD, SGD with momentum, and SGLD
-\end{itemize}
-	}
-    	
-    \block{Our Extensions}{
-		We extended this paper in a number of ways: \\
+\end{itemize} 
+
+\begin{tikzfigure}[Figures from \cite{sghmc} which we aimed to reproduce. On left, $(\theta,r)$ samples generated from various methods. Center, $\theta$ samples generated from various methods. Right, learning curves for MNIST classification]
+            \includegraphics[width=150mm]{Images/reproduce1.png}
+            \includegraphics[width=130mm]{Images/reproduce2.png}
+            \includegraphics[width=140mm]{Images/reproduce3.png}
+            \end{tikzfigure}
+
+		We extended this paper in a number of ways:
+		
 	\begin{itemize}
     \item We extended the 'No U-Turn Sampler' (NUTS) from \cite{nuts} to work with SGHMC to produce our novel algorithm SGNUTS
     \item We ran experiments on a new dataset of FashionMNIST
@@ -105,11 +110,13 @@
 		
 		where $B$ is the covariance of injected noise.}}
 		
-		\block{Implementation Details}{How things were implemented. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur a}
+		\block{SGNUTS}{'Stochastic Gradient No U-Turn Sampler' (SGNUTS) is our novel algorithm based on the 'No U-Turn Sampler' (NUTS) produced in \cite{nuts}. NUTS removes the need for the user to pre-set the number of steps HMC performs before taking a sample. We produced SGNUTS to do the same for SGHMC. At its core, it works by repeatedly performing SGHMC steps either forward or backward in time until a 'U-turn' is seen. This is when a further step backwards in time would cause the earliest sample in the trajectory to get closer to the latest sample, or a step forwards in time would cause the latest sample to get closer to the earliest sample. It reached accuracies of 0.94 on MNIST and 0.85 on FashionMNIST, which is similar to SGHMC (accuracies of 0.97 and 0.85 respectively). SGNUTS reaches the posterior faster than SGHMC, taking 28s to reach an accuracy of 0.87, compared to SGHMC taking 50s to reach 0.89. When at the posterior, SGNUTS takes longer than SGHMC to sample from it however.
 		
-		
-		
-		\block{Further Research}{What we would do with more time}
+		  \begin{tikzfigure}[SGNUTS Learning Curves on MNIST (left) and FashionMNIST (right)]
+            \includegraphics[width=150mm]{Images/SGNUTS_MNIST.png}
+            \includegraphics[width=170mm]{Images/SGNUTS_Fashion.png}
+            \end{tikzfigure} }
+
 		
 
 		%%% Second column %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -118,27 +125,34 @@
 		\block{Reproducing Experiments}{
 			Put Fanqi's experiments here. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa.
 			            \begin{tikzfigure}[MNIST (left) and FashionMNIST (right) Classification with SGHMC, SGD, SGD with Momentum, and SGLD]
-            \includegraphics[width=150mm]{MNIST.png}
-            \includegraphics[width=150mm]{fashion-mnist.png}
+            \includegraphics[width=150mm]{Images/MNIST.png}
+            \includegraphics[width=150mm]{Images/fashion-mnist.png}
             \end{tikzfigure} 
 		}
 		\block{Classifying MNIST}{
 			Put Alex's experiments here. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa.
             \begin{tikzfigure}[MNIST (left) and FashionMNIST (right) Classification with SGHMC, SGD, SGD with Momentum, and SGLD]
-            \includegraphics[width=150mm]{MNIST.png}
-            \includegraphics[width=150mm]{fashion-mnist.png}
+            \includegraphics[width=150mm]{Images/MNIST.png}
+            \includegraphics[width=150mm]{Images/fashion-mnist.png}
             \end{tikzfigure} 
 
         }
 		
-		\block{SGNUTS}{'Stochastic Gradient No U-Turn Sampler' (SGNUTS) is our novel algorithm based on the 'No U-Turn Sampler' (NUTS) produced in \cite{nuts}. NUTS removes the need for the user to pre-set the number of steps HMC performs before taking a sample. We produced SGNUTS to do the same for SGHMC. At its core, it works by repeatedly performing SGHMC steps either forward or backward in time until a 'U-turn' is seen. This is when a further step backwards in time would cause the earliest sample in the trajectory to get closer to the latest sample, or a step forwards in time would cause the latest sample to get closer to the earliest sample. It reached accuracies of 0.94 on MNIST and 0.85 on FashionMNIST, which is similar to SGHMC (accuracies of 0.97 and 0.85 respectively).
+
+    
+    		\block{Implementation Details}{How things were implemented. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur a}
 		
-		  \begin{tikzfigure}[SGNUTS Learning Curves on MNIST (left) and FashionMNIST (right)]
-            \includegraphics[width=150mm]{SGNUTS_MNIST.png}
-            \includegraphics[width=170mm]{SGNUTS_Fashion.png}
-            \end{tikzfigure} }
 		
+		
+		\block{Further Research}{
+		\begin{itemize}
+		    \item Implementation of a joint SGNUTS and SGHMC algorithm - SGNUTS quickly reaches the posterior, however SGHMC is faster at sampling when at the posterior. We could investigate the power of using SGNUTS for the first few epochs, followed by SGHMC.
+		   \item Fine-tuning the CNN used to classify CIFAR10. Currently we have shown that our SGHMC implementation can start classifying CIFAR10, however our accuracies could be higher with more time to fine-tune it.
+		   \item ... MORE THINGS
+		\end{itemize}		}
 	\end{columns}
+	
+
 
 	\block{References}{
 		\printbibliography[heading=none]
