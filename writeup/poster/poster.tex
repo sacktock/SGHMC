@@ -1,4 +1,4 @@
-\documentclass[25pt,a0paper]{tikzposter}
+\documentclass[25pt,a0paper, landscape]{tikzposter}
 
 % Suppress some useless warnings
 \usepackage{silence}
@@ -32,8 +32,6 @@
 \author{Sam Adam-Day, Alexander Goodall, Theo Lewy and Fanqi Xu}
 \institute{University of Oxford}
 
-% LaTeX shorthands
-\input{../commands}
 
 % Bibliography
 \addbibresource{../references.bib}
@@ -41,27 +39,53 @@
 \begin{document}
 
 	\maketitle
+	
+		\begin{columns}
 
+	%%% First column %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+		\column{0.6}
+		
 	\block{Stochastic Gradient Hamiltonian Monte Carlo}{
-		Info about SGHMC \cite{sghmc}. Ut adipisicing commodo do mollit nisi Lorem exercitation nulla consectetur commodo ad. Duis amet ullamco consequat dolor. Ipsum ullamco mollit velit consectetur in ex aliquip elit dolore. Pariatur cillum quis adipisicing commodo magna occaecat commodo tempor ea culpa enim commodo. Aliquip qui dolore proident ad Lorem tempor exercitation adipisicing.
+		Abstract/ What they do in their paper
 	}
-
+	%%% Second column %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	   \column{0.4}
+		
+	\block{Our Reproduction}{
+		What we reproduced
+	}
+    	
+    \block{Our Extensions}{
+		What we extended
+	}
+    	\end{columns}
 
 	\begin{columns}
 
 		%%% First column %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		\column{0.5}
-
-		\block{First block}{
-			Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa.
-		}
+		
+		\block{The Core Algorithms}{Description of HMC, Naive SGHMC and SGHMC. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa.}
+		
+		\block{SGNUTS}{Description of SGNUTS and its results. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa.}
+		
+		\block{Further Research}{What we would do with more time}
+		
 
 		%%% Second column %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		\column{0.5}
 
-		\block{Second block}{
-			Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa.
+		\block{Reproducing Experiments}{
+			Put Fanqi's experiments here. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa.
 		}
+		\block{Classifying MNIST}{
+			Put Alex's experiments here. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa.
+            \begin{tikzfigure}[MNIST (left) and FashionMNIST (right) Classification with SGHMC, SGD, SGD with Momentum, and SGLD]
+            \includegraphics[width=150mm]{MNIST.png}
+            \includegraphics[width=150mm]{fashion-mnist.png}
+            \end{tikzfigure} 
+
+        }
 		
 	\end{columns}
 
