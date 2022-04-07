@@ -9,14 +9,15 @@
 \subsection{Simulated examples}
 
 \subsection{Bayesian Neural Networks for Classification}
-For the Bayesian neural network (BNN) MNIST classification we actually used the reparameterisation of SGHMC described in the section "Connection to SGD with Momentum" of \cite{sghmc}. The SGHMC algorithm is reframed in terms of learning rate and momentum decay, and simulates the following dynamics instead,
+For the Bayesian neural network (BNN) MNIST classification we actually used the reparameterisation of SGHMC described in the section ``Connection to SGD with Momentum'' of \cite{sghmc}. The SGHMC algorithm is reframed in terms of learning rate and momentum decay, and simulates the following dynamics instead:
 $$\begin{cases}
 \nabla \theta = v\\
-\nabla v = - \eta \nabla \tilde{U}(\theta) - \alpha v + \mathcal{N}(0, 2(\alpha - \hat{\beta}) \eta)
-\end{cases}$$
-Where $\eta = \epsilon^2 M^{-1}, \alpha = \epsilon M^{-1}C, \hat{\beta} = \eta M^{-1}\hat{B}$. In all our experiments in this section we set the mass matrix $M $ to the identity, and the noise model $\hat{\beta} = \hat{B} = 0$. Other than the architecture of the BNN there are now only 3 hyperparameters for SGHMC, the learning rate $\eta$, the momentum decay $\alpha$ and the batch size $|\tilde{D}|$, in all our experiments we fixed $|\tilde{D}| = 500$ which follows from \cite{sghmc}.
+\nabla v = - \eta \nabla \wt{U}(\theta) - \alpha v + \mathcal{N}(0, 2(\alpha - \wh{\beta}) \eta)
+\end{cases}
+$$
+where $\eta = \epsilon^2 M^{-1}, \alpha = \epsilon M^{-1}C, \wh{\beta} = \eta M^{-1}\wh{B}$. In all our experiments in this section we set the mass matrix $M $ to the identity, and the noise model $\wh{\beta} = \wh{B} = 0$. Other than the architecture of the BNN there are now only 3 hyperparameters for SGHMC, the learning rate $\eta$, the momentum decay $\alpha$ and the batch size $|\wt{\D}|$, in all our experiments we fixed $|\wt{\D}| = 500$ which follows from \cite{sghmc}.
 
-To build on top of the work in \cite{sghmc} we implemented learning rate annealing for SGLD and following \cite{sgld} we weighted the samples by the learning rate as follows,
+To build on top of the work in \cite{sghmc} we implemented learning rate annealing for SGLD and following \cite{sgld} we weighted the samples by the learning rate as follows:
 $$\mathbb{E}[f(\theta)] \approx \frac{\sum^T_{t=1} \epsilon_t f(\theta_t)}{\sum^T_{t=1} \epsilon_t}$$
 Although since $f$ is a classifier we can ignore the denominator. Our BNN followed the same architecture as in \cite{sghmc}, that is one linear with 100 hidden units followed by ReLU activation followed by another linear layer and a log softmax for multi-class classification. The weights and biases for both linear layers are sampled from univariate standard normal distributions, but the Pyro method \texttt{to\_event()} declares dependence between the parameters. 
 

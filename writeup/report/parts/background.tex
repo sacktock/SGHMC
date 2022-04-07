@@ -4,7 +4,7 @@
 
 \subsection{HMC}
 
-Hamiltonian Monte Carlo (HMC) (\cite{duane-hmc,neal-hmc}) is a Markov Chain Monte Carlo (MCMC) sampling algorithm. Given a target probability distribution — in our case the posterior distribution of a set of variables $\theta$ given independent observations $x \in \D$ — it produces samples by carrying out a random walk over the parameter space using Hamiltonian dynamics.
+Hamiltonian Monte Carlo (\cite{duane-hmc,neal-hmc}) is a Markov Chain Monte Carlo (MCMC) sampling algorithm. Given a target probability distribution — in our case the posterior distribution of a set of variables $\theta$ given independent observations $x \in \D$ — it produces samples by carrying out a random walk over the parameter space using Hamiltonian dynamics.
 
 We begin with the prior distribution $p(\theta)$ and likelihood $p(x \mid \theta)$. Using these we define the \emph{potential energy} function $U$:
 \begin{equation*}
@@ -41,7 +41,8 @@ To simulate these continuous dynamics in practice, we must use a discretised ver
     \end{algorithmic}
 \end{algorithm}
 
-In practice, the dataset $\D$ may be large, and so running \cref{alg:hmc} may be computationally expensive, as the complexity of calculating $\nabla U$ scales with $| \D |$. One idea to combat this is to simulate the Hamiltonian system using only a subset of the data at a time, in analogy with stochastic gradient descent. This method is known as Stochastic Gradient Hamiltonian Monte Carlo (SGHMC), however before explaining the SGHMC algorithm we begin with Naïve SGHMC.
+In practice, the dataset $\D$ may be large, and so running \cref{alg:hmc} may be computationally expensive, as the complexity of calculating $\nabla U$ scales with $\abs\D$. One idea to combat this is to simulate the Hamiltonian system using only a subset of the data at a time, in analogy with stochastic gradient descent. This method is known as Stochastic Gradient Hamiltonian Monte Carlo (SGHMC), however before explaining the SGHMC algorithm we begin with Naïve SGHMC.
+
 
 \subsection{Naïve SGHMC}
 
@@ -57,6 +58,7 @@ Appealing to the Central Limit Theorem, we imagine that the noisy estimate $\nab
 where $B(\theta) = \frac 1 2 \ep V(\theta)$.
 
 Unfortunately, such a dynamical system can diverge quite rapidly from the true posterior distribution \cite{neal-hmc}, which necessitates frequent Metropolis-Hastings steps. Such steps are costly since calculating the acceptance probability requires the use of the whole dataset. The method `Stochastic Gradient Hamiltonian Monte Carlo' (SGHMC) proposed in \cite{sghmc} addresses this shortcoming. The idea is to incorporate friction into the dynamical system, which works to counteract the noise introduced by selecting a subset of the data.
+
 
 \subsection{SGHMC}
 
