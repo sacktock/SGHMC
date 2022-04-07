@@ -1,6 +1,6 @@
 \section{NUTS}
 
-In our current description of the SGHMC algorithm we have the user-defined hyperparameter $m$, the number of steps iterated over before we take a sample. If this number is too small, our samples will be correlated, and hence successive samples would appear to follow a random walk, and we would get slow mixing times. We demonstrate this behaviour by training 3 versions of SGHMC with $m=1,3,5$ (with $\epsilon m$ fixed). The learning curves below in figure \ref{num_steps} show that increasing $L$ increases the speed with which SGHMC reaches low error rates.
+In our current description of the SGHMC algorithm we have the user-defined hyperparameter $m$, the number of steps iterated over before we take a sample. If this number is too small, our samples will be correlated, and hence successive samples would appear to follow a random walk, and we would get slow mixing times. We demonstrate this behaviour by training 3 versions of SGHMC with $m=1,3,5$ (with $\epsilon m$ fixed). The learning curves below in figure \ref{num_steps} show that increasing $m$ increases the speed with which SGHMC reaches low error rates.
 
 \begin{figure}[h!]
 \centering

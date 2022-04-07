@@ -4,11 +4,11 @@
 
 Hamiltonian Monte Carlo (HMC) (\cite{duane-hmc,neal-hmc}) is a Markov Chain Monte Carlo (MCMC) sampling algorithm. Given a target probability distribution — in our case the posterior distribution of a set of variables $\theta$ given independent observations $x \in \D$ — it produces samples by carrying out a random walk over the parameter space using Hamiltonian dynamics.
 
-To begin with prior distribution $p(\theta)$ and likelihood $p(x \mid \theta)$. Using these we define the \emph{potential energy} function $U$:
+We begin with the prior distribution $p(\theta)$ and likelihood $p(x \mid \theta)$. Using these we define the \emph{potential energy} function $U$:
 \begin{equation*}
     U(\theta) \defeq - \sum_{x \in \D}\log p(x \mid \theta) - \log p(\theta)
 \end{equation*}
-Note that, using Bayes' rule, we have that the posterior $p(\theta \mid \D) \propto \exp(-U)$. Hamiltonian dynamics introduces an auxiliary set of momentum variables $r$. These dynamics have a physical interpretation in which an object moves about a landscape determined by $U$. We let this object have \emph{mass matrix} $M$. Then $U(\theta)$ represents the potential energy of the object, and its kinetic energy is given by $\frac 1 2 r^{\mathsf T} M^{-1} r$. The total energy of the system is a quantity known as the \emph{Hamiltonian function}:
+Note that, using Bayes' rule, we have that the posterior $p(\theta \mid \D) \propto \exp(-U)$. Hamiltonian dynamics introduces an auxiliary set of momentum variables $r$. These dynamics have a physical interpretation in which an object moves about a landscape determined by $U$. We let this object have \emph{mass matrix} $M$, which is typically set to the identity matrix. Then $U(\theta)$ represents the potential energy of the object, and its kinetic energy is given by $\frac 1 2 r^{\mathsf T} M^{-1} r$. The total energy of the system is a quantity known as the \emph{Hamiltonian function}:
 \begin{equation*}
     H(\theta, r) = U(\theta) + \frac 1 2 r^{\mathsf T} M^{-1} r
 \end{equation*}
@@ -32,7 +32,7 @@ To simulate these continuous dynamics in practice, we must use a discretised ver
             \EndFor
             \State $u \sim \rm{Uniform}[0,1]$
             \State $\rho = \exp(H(\theta, r) - H(\theta_0, r_0))$ \Comment{Acceptance probability}
-            \If{$u > \min(1, \rho)$} \Comment{Only accept new state with probability $\rho$}
+            \If{$u < \min(1, \rho)$} \Comment{Only accept new state with probability $\rho$}
                 \State $\theta = \theta_0$
             \EndIf
         \EndFor
