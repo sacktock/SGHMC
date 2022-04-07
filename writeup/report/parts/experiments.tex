@@ -13,8 +13,7 @@ For the Bayesian neural network (BNN) MNIST classification we actually used the 
 $$\begin{cases}
 \nabla \theta = v\\
 \nabla v = - \eta \nabla \tilde{U}(\theta) - \alpha v + \mathcal{N}(0, 2(\alpha - \hat{\beta}) \eta)
-\end{cases}
-$$
+\end{cases}$$
 Where $\eta = \epsilon^2 M^{-1}, \alpha = \epsilon M^{-1}C, \hat{\beta} = \eta M^{-1}\hat{B}$. In all our experiments in this section we set the mass matrix $M $ to the identity, and the noise model $\hat{\beta} = \hat{B} = 0$. Other than the architecture of the BNN there are now only 3 hyperparameters for SGHMC, the learning rate $\eta$, the momentum decay $\alpha$ and the batch size $|\tilde{D}|$, in all our experiments we fixed $|\tilde{D}| = 500$ which follows from \cite{sghmc}.
 
 To build on top of the work in \cite{sghmc} we implemented learning rate annealing for SGLD and following \cite{sgld} we weighted the samples by the learning rate as follows,
@@ -35,11 +34,8 @@ For MNIST we ran each of the algorithms for 800 epochs with 50 warmup epochs. Fo
 \caption{Reproducing the MNIST classification experiment from \cite{sghmc}; SGHMC ($\eta = 2.0\time10^{-6}, \alpha=0.01, \texttt{resample\_n} =0$ ), SGLD ($\eta = 4.0\time10^{-5}$), SGD ($\eta = 1.0\time10^{-5}$), SGD with momentum ($\eta = 1.0\time10^{-6}, \alpha=0.01$)}
 \label{fig:MNIST}
 \end{figure}
-
-
 The results we get from MNIST classification align very closely with those in \cite{sghmc} and so we come to the same conclusion; the need for scalable and efficient Bayesian inference algorithms. The key benefit of BNNs is that we are not overconfident on out-of-distribution examples, Figure \ref{fig:B} illustrates that we still maintain this property when using SGHMC to approximately sample from the posterior distribution. We additionally conducted a brief comparison between Variational Inference (VI) and SGHMC in this setting, Figure \ref{fig:VI} outlines our findings.
-
-\begin{figure}
+\begin{figure}[h!]
 \centering
 \begin{subfigure}{.5\textwidth}
   \centering
@@ -56,12 +52,10 @@ The results we get from MNIST classification align very closely with those in \c
 \caption{{\bf Left} (a) illustrates that we get uncertainty estimates on out-of-distribution examples. {\bf Right} (b) compares VI (Renyi ELBO, $\alpha = 0.01$, \texttt{num\_particles} $= 2$) and SGHMC ($\eta = 2.0\time10^{-6}, \alpha=0.01, \texttt{resample\_n} =0$) on MNIST. For VI we draw 80000 samples from the variational posterior $q_{\phi}$ and report the test error by Bayesian averaging. For SGHMC we do the same, except we are approximately sampling from the true posterior $p(\theta \: | D \:)$.}
 \label{fig:demo}
 \end{figure}
-
 The initial results suggest that SGHMC performs better than VI in this setting, although this is not the full picture. Once VI fits the variational posterior distribution $q_{\phi}$ as closely as possible to the true posterior it takes only hundreds of samples to characterise $q_{\phi}$, whereas SGHMC requires several more samples to characterise the true posterior. In practice storing thousands of parameterisations of the same NN is very costly and so this is probably why VI is a more popular choice for Bayesian inference. 
 
 We conclude this section by demonstrating our algorithms can be applied to other datasets and more complicated models, Figure \ref{fig:fashionMNIST} presents the results of running the same BNN architecture on FashionMNIST, and Figure \ref{fig:CIFAR10} demonstrates that our implementation of SGHMC can be used with convolutional neural networks (CNNs).
-
-\begin{figure}
+\begin{figure}[h!]
 \centering
 \begin{subfigure}{.5\textwidth}
   \centering
@@ -75,6 +69,6 @@ We conclude this section by demonstrating our algorithms can be applied to other
   \caption{Convolutional BNN on CIFAR10}
   \label{fig:CIFAR10}
 \end{subfigure}
-\caption{{\bf Left} (a) FashionMNIST classification; SGHMC ($\eta = 1.0\time10^{-6}, \alpha=0.01, \texttt{resample\_n} =0$ ), SGLD ($\eta = 1.0\time10^{-5}$), SGD ($\eta = 1.0\time10^{-5}$), SGD with momentum ($\eta = 1.0\time10^{-6}, \alpha=0.01$); \texttt{warmup\_epochs} $= 400$. {\bf Right} (b) Convolutional BNN with 2 convolutional layers, batch norm, max pooling and tanh activations followed by two Bayesian linear layers with tanh activation;  SGHMC ($\eta = 1.0\time10^{-6}, \alpha=0.01, \texttt{resample\_n} =0$ ) ; \texttt{warmup\_epochs} $= 150$.}
+\caption{{\bf Left} (a) FashionMNIST classification; SGHMC ($\eta = 1.0\time10^{-6}, \alpha=0.01, \texttt{resample\_n} =0$ ), SGLD ($\eta = 1.0\time10^{-5}$), SGD ($\eta = 1.0\time10^{-5}$), SGD with momentum ($\eta = 1.0\time10^{-6}, \alpha=0.01$); \texttt{warmup\_epochs} $= 100$. {\bf Right} (b) Convolutional BNN with 2 convolutional layers, batch norm, max pooling and tanh activations followed by two Bayesian linear layers with tanh activation;  SGHMC ($\eta = 1.0\time10^{-6}, \alpha=0.01, \texttt{resample\_n} =0$ ) ; \texttt{warmup\_epochs} $= 150$.}
 \label{fig:other-datasets}
 \end{figure}
