@@ -122,26 +122,34 @@
 		%%% Second column %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		\column{0.5}
 
-		\block{Reproducing Experiments}{
-			Put Fanqi's experiments here. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa.
-			            \begin{tikzfigure}[MNIST (left) and FashionMNIST (right) Classification with SGHMC, SGD, SGD with Momentum, and SGLD]
-            \includegraphics[width=150mm]{Images/MNIST.png}
-            \includegraphics[width=150mm]{Images/fashion-mnist.png}
-            \end{tikzfigure} 
-		}
-		\block{Classifying MNIST}{
-			Put Alex's experiments here. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa.
-            \begin{tikzfigure}[MNIST (left) and FashionMNIST (right) Classification with SGHMC, SGD, SGD with Momentum, and SGLD]
+    		\block{Implementation Details}{We implemented the following algorithms from scratch: HMC, SGHMC, SGLD , SGD, SGD with Nesterov momentum and SGNUTS. All of our implementations subclass Pyro's \texttt{MCMCKernel} and are designed to be used directly with Pyro \cite{pyro} — a universal probabilistic programming language (PPL) written in Python. Pyro comes with useful built in functions that transform probabilistic programs (PP) into potential functions that automatically handle gradient computations. The main caveat of stochastic gradient samplers and optimizers is that we require that the potential function has the form: $$\widetilde{U}(\theta) =  -\frac{|D|}{|\widetilde{D}|} \log p(\widetilde{D} \: | \: \theta) - \log p (\theta)$$
+Using our implementations we illustrate below how sampling algorithms differ from optimization algorithms; while sampling algorithms visit the full posterior $p(\theta \: | \: D)$ as they draw samples, optimization algoithms hone in on the MAP estimate $\text{argmax}_{\theta} \{ p(D \: | \: \theta) p(\theta) \}$. 
+	\begin{tikzfigure}[{\bf Far left}: SGHMC (\texttt{batch\_size} $= 5, \eta = 0.01, \alpha=0.1$ \texttt{num\_steps}$=10$, \texttt{resample\_n} $=50$). {\bf Mid left:} SGLD (\texttt{batch\_size} $= 5, \eta = 0.1, \alpha=0.1$ \texttt{num\_steps}$=5$). {\bf Mid right:} SGD (\texttt{batch\_size} $= 5, \eta = 0.001$). {\bf Far right:} SGD with Nesterov momentum (\texttt{batch\_size} $= 5, \eta = 0.001, \alpha=0.1$)]
+            \includegraphics[width=75mm]{Images/SGHMC_demo.png}
+            \includegraphics[width=75mm]{Images/SGLD_demo.png}
+	    \includegraphics[width=75mm]{Images/SGD_demo.png}
+            \includegraphics[width=75mm]{Images/SGDMOM_demo.png}
+            \end{tikzfigure}
+ }
+
+
+
+		\block{Bayesian Neural Networks for Classification}{Below we present the results of running our algorithms on MNIST and FashionMNIST. We ran each of the algorithms for 800 epochs with 50 warmup epochs and 100 warm up epochs for MNIST and FashionMNIST respectively. For all the experiments we subsampled the dataset with batch sizes of 500 images. For the posterior sampling algorithms (SGHMC and SGLD) we performed Bayesian averaging over all the sampled parameterisations of the BNN after warmup and report the test accuracy as described in Section II of \cite{hands-on-bnn}. For the optimization algorithms (SGD and SGD with momentum) we fixed the L2 regularization to $\lambda = 1.0$ and take the latest sample as point estimate and report the test accuracy.
+			
+            \begin{tikzfigure}[{\bf Left:} reproducing the MNIST classificiation experiment from \cite{sghmc} ; SGHMC ($\eta = 2.0\times 10^{-6}, \alpha=0.01, \texttt{resample\_n} =0$ ), SGLD ($\eta = 4.0\times 10^{-5}$), SGD ($\eta = 1.0\times 10^{-5}$), SGD with momentum ($\eta = 1.0\times 10^{-6}, \alpha=0.01$) ;\texttt{warmup\_epochs} $= 50$ {\bf Right:}  FashionMNIST classification experiment ; SGHMC ($\eta = 1.0\times 10^{-6}, \alpha=0.01, \texttt{resample\_n} =0$ ), SGLD ($\eta = 1.0\times 10^{-5}$), SGD ($\eta = 1.0\times 10^{-5}$), SGD with momentum ($\eta = 1.0\times 10^{-6}, \alpha=0.01$); \texttt{warmup\_epochs} $= 100$.]
             \includegraphics[width=150mm]{Images/MNIST.png}
             \includegraphics[width=150mm]{Images/fashion-mnist.png}
             \end{tikzfigure} 
 
         }
 		
-
-    
-    		\block{Implementation Details}{How things were implemented. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur a}
-		
+		\block{Reproducing Experiments}{
+			Put Fanqi's experiments here. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa.
+			            \begin{tikzfigure}[MNIST (left) and FashionMNIST (right) Classification with SGHMC, SGD, SGD with Momentum, and SGLD]
+            \includegraphics[width=150mm]{Images/MNIST.png}
+            \includegraphics[width=150mm]{Images/fashion-mnist.png}
+            \end{tikzfigure} 
+		}	
 		
 		
 		\block{Further Research}{
