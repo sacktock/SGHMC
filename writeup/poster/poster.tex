@@ -1,4 +1,4 @@
-\documentclass[25pt,a0paper, landscape]{tikzposter}
+\documentclass[25pt,a0paper]{tikzposter}
 
 % Suppress some useless warnings
 \usepackage{silence}
@@ -18,6 +18,7 @@
 \usepackage[UKenglish]{babel}
 \usepackage[style=alphabetic,maxbibnames=99]{biblatex}
 \usepackage{amsmath}
+\newcommand{\defeq}{\vcentcolon=}
 \usepackage{mathtools}
 \usepackage{amsthm}
 \usepackage{csquotes}
@@ -43,20 +44,35 @@
 		\begin{columns}
 
 	%%% First column %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-		\column{0.6}
+		\column{0.4}
 		
 	\block{Stochastic Gradient Hamiltonian Monte Carlo}{
-		Abstract/ What they do in their paper
+		Hamiltonian Monte Carlo (HMC) already provides a way to sample from a posterior distribution, however it uses all data available to it, which can be computationally expensive for large datasets. This motivated the production of the Stochastic Gradient Hamiltonian Monte Carlo algorithm (SGHMC), which is introduced in \cite{sghmc}. It uses batch data to produce noisy estimates of a potential function to, which gives SGHMC dramatic speed-up when compared to HMC. In this paper, Chen et al introduce a Naive SGHMC algorithm, as well as SGHMC itself. They demonstrate links between SGHMC and both Stochastic Gradient Descent with momentum, and Stochastic Gradient Langevin Dynamics. They then run experiments using SGHMC. We reproduced SGHMC, and replicated a number of Chen et al's experiments. The repository for our code is found at https://github.com/sacktock/SGHMC.
+		
+
+		
 	}
 	%%% Second column %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	   \column{0.4}
+	   \column{0.6}
 		
 	\block{Our Reproduction}{
-		What we reproduced
+	We reproduced the following experiments from the paper: \\
+\begin{itemize}
+    \item Sampling $\theta$ from the posterior with $U(\theta) = -2\theta^2 + \theta^4$ using HMC, Naive SGHMC and SGHMC
+    \item Sampling $(\theta,r)$ generated from $U(\theta) = \frac{1}{2}\theta^2$ with HMC, and from $U(\theta) = \frac{1}{2}\theta^2 + \mathcal{N}(0,4)$ as a proxy for SGHMC
+    \item Classifying the MNIST dataset using SGHMC as well as with SGD, SGD with momentum, and SGLD
+\end{itemize}
 	}
     	
     \block{Our Extensions}{
-		What we extended
+		We extended this paper in a number of ways: \\
+	\begin{itemize}
+    \item We extended the 'No U-Turn Sampler' (NUTS) from \cite{nuts} to work with SGHMC to produce our novel algorithm SGNUTS
+    \item We ran experiments on a new dataset of FashionMNIST
+    \item We briefly introduced some Convolutional Neural Networks (CNNs) to see how accurate SGHMC was at classifying CIFAR10
+    \item We attempted to evaluate the noisiness of the data ($B$ in the literature and in what follows) and used this to increase the algorithm's efficiency
+\end{itemize}
+		
 	}
     	\end{columns}
 
@@ -65,9 +81,33 @@
 		%%% First column %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		\column{0.5}
 		
-		\block{The Core Algorithms}{Description of HMC, Naive SGHMC and SGHMC. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa.}
+		\block{The Core Algorithms}{
+		The first three are sampling based methods - we sample parameters $\theta$ from a model's posterior. We write here the transition step that, upon iterating, gives us $\theta \sim p(\theta | \mathcal{D})$, where $\mathcal{D}$ is all the data available to us. $\tilde{\mathcal{D}}$ is a randomly sampled batch of this data. \\
 		
-		\block{SGNUTS}{Description of SGNUTS and its results. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa.}
+		\innerblock{Hamiltonian Monte Carlo (HMC)}{
+		$$\Delta \theta \leftarrow \epsilon M^{-1}r \qquad \Delta r \leftarrow - \epsilon \nabla U(\theta)$$
+		where $$ U(\theta) \defeq - \sum_{x \in \mathcal{D}}\log p(x \mid \theta) - \log p(\theta)$$}
+		
+		\innerblock{Naive Stochastic Gradient Hamiltonian Monte Carlo (Naive SGHMC)}{$$\Delta \theta \leftarrow \epsilon M^{-1}r \qquad \Delta r \leftarrow - \epsilon \nabla \tilde{U}(\theta)$$
+		where $$ \tilde{U}(\theta) = - \frac{|\mathcal{D}|}{|{\tilde{\mathcal{D}}}|}\sum_{x \in \tilde{\mathcal{D}}} \nabla \log p(x \mid \theta) - \nabla \log p(\theta)$$}
+		
+		\innerblock{Stochastic Gradient Hamiltonian Monte Carlo (SGHMC)}{$$\Delta \theta \leftarrow \epsilon M^{-1}r \qquad \Delta r \leftarrow - \epsilon \nabla \tilde{U}(\theta) - \epsilon C M^{-1} r + \mathcal{N}(0,2 (C-\hat{B})\epsilon)$$
+		where $$ \tilde{U}(\theta) = - \frac{|\mathcal{D}|}{|{\tilde{\mathcal{D}}}|}\sum_{x \in \tilde{\mathcal{D}}} \nabla \log p(x \mid \theta) - \nabla \log p(\theta)$$
+		and $\hat{B}$ is an estimation of the noise covariance $B$ encapsulated by $\nabla \tilde{U}(\theta) = \nabla U(\theta) + \mathcal{N}(0,2 B\epsilon)$, and $C$ is a hyperparameter}
+		
+		The next two are optimization based methods, which produce $\theta$ that are at the mode of the posterior distribution - MAP estimates. \\
+		
+		\innerblock{Stochastic Gradient Descent (SGD)}{$$\Delta \theta \leftarrow  \alpha \Delta \theta - \eta \nabla U(\theta)$$
+		
+		where $\alpha$ is a momentum hyperparameter. Standard SGD sets $\alpha=0$} 
+		
+		\innerblock{Stochastic Gradient Langevin Dynamics (SGLD)}{$$\Delta \theta \leftarrow - \eta \nabla U(\theta) + \mathcal{N}(0,B)$$
+		
+		where $B$ is the covariance of injected noise.}}
+		
+		\block{Implementation Details}{How things were implemented. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur a}
+		
+		
 		
 		\block{Further Research}{What we would do with more time}
 		
@@ -77,15 +117,26 @@
 
 		\block{Reproducing Experiments}{
 			Put Fanqi's experiments here. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa.
+			            \begin{tikzfigure}[MNIST (left) and FashionMNIST (right) Classification with SGHMC, SGD, SGD with Momentum, and SGLD]
+            \includegraphics[width=150mm]{MNIST.png}
+            \includegraphics[width=150mm]{fashion-mnist.png}
+            \end{tikzfigure} 
 		}
 		\block{Classifying MNIST}{
 			Put Alex's experiments here. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa.
             \begin{tikzfigure}[MNIST (left) and FashionMNIST (right) Classification with SGHMC, SGD, SGD with Momentum, and SGLD]
-            \includegraphics[width=150mm]{Images/MNIST.png}
-            \includegraphics[width=150mm]{Images/fashion-mnist.png}
+            \includegraphics[width=150mm]{MNIST.png}
+            \includegraphics[width=150mm]{fashion-mnist.png}
             \end{tikzfigure} 
 
         }
+		
+		\block{SGNUTS}{'Stochastic Gradient No U-Turn Sampler' (SGNUTS) is our novel algorithm based on the 'No U-Turn Sampler' (NUTS) produced in \cite{nuts}. NUTS removes the need for the user to pre-set the number of steps HMC performs before taking a sample. We produced SGNUTS to do the same for SGHMC. At its core, it works by repeatedly performing SGHMC steps either forward or backward in time until a 'U-turn' is seen. This is when a further step backwards in time would cause the earliest sample in the trajectory to get closer to the latest sample, or a step forwards in time would cause the latest sample to get closer to the earliest sample. It reached accuracies of 0.94 on MNIST and 0.85 on FashionMNIST, which is similar to SGHMC (accuracies of 0.97 and 0.85 respectively).
+		
+		  \begin{tikzfigure}[SGNUTS Learning Curves on MNIST (left) and FashionMNIST (right)]
+            \includegraphics[width=150mm]{SGNUTS_MNIST.png}
+            \includegraphics[width=170mm]{SGNUTS_Fashion.png}
+            \end{tikzfigure} }
 		
 	\end{columns}
 
