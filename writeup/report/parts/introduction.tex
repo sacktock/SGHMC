@@ -13,15 +13,15 @@ Our motivation to choose this paper stemmed from the fact that the SGHMC algorit
 \begin{itemize}
     \item Sampling $\theta$ from the posterior with $U(\theta) = -2\theta^2 + \theta^4$ using HMC, Naive SGHMC and SGHMC
     \item Sampling $(\theta,r)$ generated from $U(\theta) = \frac{1}{2}\theta^2$ with HMC, and from $U(\theta) = \frac{1}{2}\theta^2 + \mathcal{N}(0,4)$ as a proxy for SGHMC.
-    \item Classifying the MNIST dataset using SGHMC as well as with Stochastic Gradient Descent, Stochastic Gradient Descent with momentum, and Stochastic Gradient Langevin Dynamics.
+    \item Classifying the MNIST dataset \cite{mnist} using SGHMC as well as with Stochastic Gradient Descent, Stochastic Gradient Descent with momentum, and Stochastic Gradient Langevin Dynamics.
 \end{itemize}
 
 We also considered some new ideas:
 
 \begin{itemize}
     \item We extended the `No U-Turn Sampler' (NUTS) from \cite{nuts} to work with SGHMC to produce our novel algorithm SGNUTS.
-    \item We ran experiments on a new dataset of FashionMNIST.
-    \item We briefly introduced some Convolutional Neural Networks (CNNs) to see how accurate SGHMC was at classifying CIFAR10.
+    \item We ran experiments on a new dataset of FashionMNIST \cite{fashion-mnist}.
+    \item We briefly introduced some Convolutional Neural Networks (CNNs) to see how accurate SGHMC was at classifying CIFAR10 \cite{cifar10}.
     \item We attempted to evaluate the noisiness of the data ($B$ in the literature and in what follows) and used this to increase the algorithm's efficiency.
 \end{itemize}
 
