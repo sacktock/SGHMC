@@ -152,21 +152,21 @@ Using our implementations we illustrate below how sampling algorithms differ fro
             \includegraphics[width=75mm]{Images/SGDMOM_demo.png}
             \end{tikzfigure}
  }
-
-
-
 		
-		
-		\block{Simulated Examples}{
-			Put Fanqi's experiments here. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa.
-			            \begin{tikzfigure}[MNIST (left) and FashionMNIST (right) Classification with SGHMC, SGD, SGD with Momentum, and SGLD]
-            \includegraphics[width=120mm]{Images/fig1ax4.pdf}
+\block{Simulated Examples}{
+			Simulated scenarios are reproduced and extended from scratch based on the Matlab version of the original paper \cite{simu_code}. Conclusions can be drawn as follows:
+		\begin{itemize}
+        \item As shown in Fig. 1, compared with naive stochastic gradient HMC, which requires a frequent costly MH correction step, SGHMC maintains more perfectly on both of the desired target distributions.
+        \item As shown in Fig. 2(a), compared with naive stochastic gradient HMC without MH, which may not yield the correct target distribution, SGHMC can be used to modify the noisy dynamical system more correctly. The extension on the step size in Fig. 2(b) proves the Theorem 3.1 that $p_t(\theta,r)$ tends to be a uniform distribution over time, which can be very far from the target distribution $\pi$.
+        \item As shown in Fig. 2(c), as step size decreases, SGLD \cite{sgld} has a high autocorrelation time while SGHMC has very low one with even lower estimation error which indicates the efficiency of SGHMC. Fig. 2(d) shows that SGLD performs worse to explore the tails of the distribution compared to SGHMC.
+        \end{itemize} 
+	\begin{tikzfigure}[{\bf (a)}: Points $(\theta,r)$ simulated of 15000 steps. {\bf (b):} Points $(\theta,r)$ simulated of 150000 steps. {\bf (c):} Autocorrelation time versus estimation error for the five settings. {\bf (d):} First 50 samples of SGHMC and SGLD]
+	   \includegraphics[width=75mm]{Images/fig1ax4.pdf}
             \includegraphics[width=75mm]{Images/fig2apt.pdf}
 	    \includegraphics[width=75mm]{Images/fig3aerrt.pdf}
             \includegraphics[width=75mm]{Images/fig3btraj.pdf}
-            \end{tikzfigure} 
-		}	
-		
+            \end{tikzfigure} 		
+	}
 		
 		\block{Further Research}{
 		\begin{itemize}
