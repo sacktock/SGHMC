@@ -40,16 +40,16 @@
 \begin{document}
 
 	\maketitle
-
+	
 		\begin{columns}
 
 	%%% First column %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		\column{0.4}
-
-
+		
+	
 	%%% Second column %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	   \column{0.6}
-
+		
 
     	\end{columns}
 
@@ -59,12 +59,12 @@
 		\column{0.5}
 		\block{Stochastic Gradient Hamiltonian Monte Carlo}{
 		Hamiltonian Monte Carlo (HMC) provides a way to sample from a posterior distribution using all data available to it. To do this it must produce the potential function $U(\theta) \propto \log p(\theta | \mathcal{D})$, as well as its gradient. Using all of the data to find $U(\theta)$ is computationally expensive for large datasets, rendering HMC useless. This motivated the production of the Stochastic Gradient Hamiltonian Monte Carlo algorithm (SGHMC), which is introduced in \cite{sghmc}. It uses batch data to produce noisy estimates of the potential function, which gives SGHMC dramatic speed-up when compared to HMC. In this paper, Chen et al introduce a Naive SGHMC algorithm, as well as SGHMC itself. They demonstrate links between SGHMC and both Stochastic Gradient Descent with momentum, and Stochastic Gradient Langevin Dynamics. They then run experiments using SGHMC. We reproduced SGHMC, and replicated a number of Chen et al's experiments. The repository for our code is found at https://github.com/sacktock/SGHMC.
-
-
+	
+		
 	}
 		\block{The Core Algorithms}{
 		The first four are sampling based methods - we sample parameters $\theta$ from a model's posterior. We write here the transition step that, upon iterating, gives us $\theta \sim p(\theta | \mathcal{D})$, where $\mathcal{D}$ is all the data available to us. $\tilde{\mathcal{D}}$ is a randomly sampled batch of this data. \\
-
+		
 \begin{minipage}[t]{0.43\linewidth}
 	\innerblock{Hamiltonian Monte Carlo (HMC)}{
 		$$\Delta \theta \leftarrow \epsilon M^{-1}r \qquad \Delta r \leftarrow - \epsilon \nabla U(\theta)$$
@@ -82,27 +82,27 @@
 \end{minipage}
 \begin{minipage}[t]{0.3\linewidth}
 		\innerblock{Stochastic Gradient Langevin Dynamics (SGLD)}{$$\Delta \theta \leftarrow - \eta \nabla U(\theta) + \mathcal{N}(0,B)$$
-
+		
 		where $B$ is the covariance of injected noise.\\}
 	    \end{minipage}
-
+				
 		The next one is an optimization based method, which produces $\theta$ that are at the mode of the posterior distribution - MAP estimates. \\
 
 		\innerblock{Stochastic Gradient Descent (SGD)}{$$\Delta \theta \leftarrow  \alpha \Delta \theta - \eta \nabla U(\theta)$$
-
+		
 		where $\alpha$ is a momentum hyperparameter. Standard SGD sets $\alpha=0$ } 
-
+		
 	}
 		\block{SGNUTS}{'Stochastic Gradient No U-Turn Sampler' (SGNUTS) is our novel algorithm based on the 'No U-Turn Sampler' (NUTS) produced in \cite{nuts}. NUTS removes the need for the user to pre-set the number of steps HMC performs before taking a sample. We produced SGNUTS to do the same for SGHMC. At its core, it works by repeatedly performing SGHMC steps either forward or backward in time until a 'U-turn' is seen. This is when a further step forwards in time would cause the latest sample in the trajectory to get closer to the earliest sample (or similarly for a step backwards in time). It reached accuracies of 0.94 on MNIST and 0.85 on FashionMNIST, which is similar to SGHMC (accuracies of 0.97 and 0.85 respectively). SGNUTS reaches the posterior faster than SGHMC, taking 28s to reach an accuracy of 0.87, compared to SGHMC taking 50s to reach 0.89. When at the posterior, SGNUTS takes longer than SGHMC to sample from it however.
-
+		
 		  \begin{tikzfigure}[SGNUTS Learning Curves on MNIST (left) and FashionMNIST (right)]
             \includegraphics[width=120mm]{Images/SGNUTS_MNIST.png}
             \includegraphics[width=120mm]{Images/SGNUTS_Fashion.png}
             \end{tikzfigure} }
 
-
+		
 \block{Bayesian Neural Networks for Classification}{Below we present the results of running our algorithms on MNIST and FashionMNIST. We ran each of the algorithms for 800 epochs with 50 warmup epochs and 100 warm up epochs for MNIST and FashionMNIST respectively. For all the experiments we subsampled the dataset with batch sizes of 500 images. For the posterior sampling algorithms (SGHMC and SGLD) we performed Bayesian averaging over all the sampled parameterisations of the BNN after warmup and report the test accuracy as described in Section II of \cite{hands-on-bnn}. For the optimization algorithms (SGD and SGD with momentum) we fixed the L2 regularization to $\lambda = 1.0$ and take the latest sample as point estimate and report the test accuracy.
-
+			
             \begin{tikzfigure}[{\bf Left:} reproducing the MNIST classificiation experiment from \cite{sghmc} ; SGHMC ($\eta = 2.0\times 10^{-6}, \alpha=0.01, \texttt{resample\_n} =0$ ), SGLD ($\eta = 4.0\times 10^{-5}$), SGD ($\eta = 1.0\times 10^{-5}$), SGD with momentum ($\eta = 1.0\times 10^{-6}, \alpha=0.01$) ;\texttt{warmup\_epochs} $= 50$ {\bf Right:}  FashionMNIST classification experiment ; SGHMC ($\eta = 1.0\times 10^{-6}, \alpha=0.01, \texttt{resample\_n} =0$ ), SGLD ($\eta = 1.0\times 10^{-5}$), SGD ($\eta = 1.0\times 10^{-5}$), SGD with momentum ($\eta = 1.0\times 10^{-6}, \alpha=0.01$); \texttt{warmup\_epochs} $= 100$.]
             \includegraphics[width=150mm]{Images/MNIST.png}
             \includegraphics[width=150mm]{Images/fashion-mnist.png}
@@ -126,18 +126,18 @@
             \end{tikzfigure}
 
 		We extended this paper in a number of ways:
-
+		
 	\begin{itemize}
     \item We extended the 'No U-Turn Sampler' (NUTS) from \cite{nuts} to work with SGHMC to produce our novel algorithm SGNUTS
     \item We ran experiments on a new dataset of FashionMNIST
     \item We briefly introduced some Convolutional Neural Networks (CNNs) to see how accurate SGHMC was at classifying CIFAR10
     \item We attempted to evaluate the noisiness of the data ($B$ in the literature and in what follows) and used this to increase the algorithm's efficiency
 \end{itemize}
-
+		
 	}
 
     		\block{Implementation Details}{We implemented the following algorithms from scratch: HMC, SGHMC, SGLD , SGD, SGD with Nesterov momentum and SGNUTS. All of our implementations subclass Pyro's \texttt{MCMCKernel} and are designed to be used directly with Pyro \cite{pyro} — a universal probabilistic programming language (PPL) written in Python. Pyro comes with useful built in functions that transform probabilistic programs (PP) into potential functions that automatically handle gradient computations. The main caveat of stochastic gradient samplers and optimizers is that we require that the potential function has the form: $$\widetilde{U}(\theta) =  -\frac{|D|}{|\widetilde{D}|} \log p(\widetilde{D} \: | \: \theta) - \log p (\theta)$$
-Using our implementations we illustrate below how sampling algorithms differ from optimization algorithms; while sampling algorithms visit the full posterior $p(\theta \: | \: D)$ as they draw samples, optimization algoithms hone in on the MAP estimate $\text{argmax}_{\theta} \{ p(D \: | \: \theta) \cdot p(\theta) \}$. 
+Using our implementations we illustrate below how sampling algorithms differ from optimization algorithms; while sampling algorithms visit the full posterior $p(\theta \: | \: D)$ as they draw samples, optimization algoithms hone in on the MAP estimate $\text{argmax}_{\theta} \{ p(D \: | \: \theta) p(\theta) \}$. 
 	\begin{tikzfigure}[{\bf Far left}: SGHMC (\texttt{batch\_size} $= 5, \eta = 0.01, \alpha=0.1$ \texttt{num\_steps}$=10$, \texttt{resample\_n} $=50$). {\bf Mid left:} SGLD (\texttt{batch\_size} $= 5, \eta = 0.1, \alpha=0.1$ \texttt{num\_steps}$=5$). {\bf Mid right:} SGD (\texttt{batch\_size} $= 5, \eta = 0.001$). {\bf Far right:} SGD with Nesterov momentum (\texttt{batch\_size} $= 5, \eta = 0.001, \alpha=0.1$)]
             \includegraphics[width=75mm]{Images/SGHMC_demo.png}
             \includegraphics[width=75mm]{Images/SGLD_demo.png}
@@ -148,8 +148,8 @@ Using our implementations we illustrate below how sampling algorithms differ fro
 
 
 
-
-
+		
+		
 		\block{Reproducing Experiments}{
 			Put Fanqi's experiments here. Lorem tempor do enim occaecat in mollit. Ut Lorem adipisicing occaecat nulla cupidatat aute reprehenderit proident. Enim officia ut ex pariatur aute Lorem eu ut duis. Lorem Lorem ut est nostrud aute ullamco. Minim aliquip incididunt occaecat reprehenderit elit irure magna. Do nostrud amet ad ipsum enim sunt. Deserunt velit velit adipisicing exercitation ex fugiat deserunt ullamco eiusmod et consectetur culpa.
 			            \begin{tikzfigure}[MNIST (left) and FashionMNIST (right) Classification with SGHMC, SGD, SGD with Momentum, and SGLD]
@@ -157,20 +157,20 @@ Using our implementations we illustrate below how sampling algorithms differ fro
             \includegraphics[width=150mm]{Images/fashion-mnist.png}
             \end{tikzfigure} 
 		}	
-
-
+		
+		
 		\block{Further Research}{
 		\begin{itemize}
 		    \item Implementation of a joint SGNUTS and SGHMC algorithm - SGNUTS quickly reaches the posterior, however SGHMC is faster at sampling when at the posterior. We could investigate the power of using SGNUTS for the first few epochs, followed by SGHMC.
 		   \item Fine-tuning the CNN used to classify CIFAR10. Currently we have shown that our SGHMC implementation can start classifying CIFAR10, however our accuracies could be higher with more time to fine-tune it.
 		   \item ... MORE THINGS
 		\end{itemize}		}
-
+		
 			\block{References}{
 		\printbibliography[heading=none]
 	}
 	\end{columns}
-
+	
 
 
 
