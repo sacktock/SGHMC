@@ -119,20 +119,20 @@
 		%%% Second column %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		\column{0.5}
 			\block{Our Reproduction and Extensions}{
-	We reproduced the following experiments from the paper: \\
+	We reproduced the following experiments from the paper:
 \begin{itemize}
     \item Sampling $\theta$ from the posterior with $U(\theta) = -2\theta^2 + \theta^4$ using HMC, Naive SGHMC and SGHMC
     \item Sampling $(\theta,r)$ generated from $U(\theta) = \frac{1}{2}\theta^2$ with HMC, and from $U(\theta) = \frac{1}{2}\theta^2 + \mathcal{N}(0,4)$ as a proxy for the noisy $\tilde{U}(\theta)$ in SGHMC
+    \item Comparing the autocorrelation times of SGHMC and SGLD.
     \item Classifying the MNIST dataset using SGHMC as well as with SGD, SGD with momentum, and SGLD
 \end{itemize} 
-
 \begin{tikzfigure}[Figures from \cite{sghmc} which we aimed to reproduce. On left, $(\theta,r)$ samples generated from various methods. Center, $\theta$ samples generated from various methods. Right, learning curves for MNIST classification]
             \includegraphics[width=100mm]{Images/reproduce1.png}
             \includegraphics[width=100mm]{Images/reproduce2.png}
             \includegraphics[width=100mm]{Images/reproduce3.png}
             \end{tikzfigure}
 
-		We extended this paper in a number of ways:
+		We extended the results of \cite{sghmc} in the following ways:
 		
 	\begin{itemize}
     \item We extended the 'No U-Turn Sampler' (NUTS) from \cite{nuts} to work with SGHMC to produce our novel algorithm SGNUTS
@@ -156,12 +156,12 @@ Using our implementations we illustrate below how sampling algorithms differ fro
 \block{Simulated Examples}{
 			Simulated scenarios are reproduced and extended from scratch based on the Matlab version of the original paper \cite{simu_code}. Conclusions can be drawn as follows:
 		\begin{itemize}
-        \item As shown in Fig. 1, compared with naive stochastic gradient HMC, which requires a frequent costly MH correction step, SGHMC maintains more perfectly on both of the desired target distributions.
-        \item As shown in Fig. 2(a), compared with naive stochastic gradient HMC without MH, which may not yield the correct target distribution, SGHMC can be used to modify the noisy dynamical system more correctly. The extension on the step size in Fig. 2(b) proves the Theorem 3.1 that $p_t(\theta,r)$ tends to be a uniform distribution over time, which can be very far from the target distribution $\pi$.
-        \item As shown in Fig. 2(c), as step size decreases, SGLD \cite{sgld} has a high autocorrelation time while SGHMC has very low one with even lower estimation error which indicates the efficiency of SGHMC. Fig. 2(d) shows that SGLD performs worse to explore the tails of the distribution compared to SGHMC.
+        \item As shown in Fig. 5(a), compared with naive stochastic gradient HMC, which requires a frequent costly MH correction step, SGHMC maintains more perfectly on both of the desired target distributions.
+        \item As shown in Fig. 5(b), compared with naive stochastic gradient HMC without MH, which may not yield the correct target distribution, SGHMC can be used to modify the noisy dynamical system more correctly. The extension on the step size in Fig. 2(b) proves the Theorem 3.1 that $p_t(\theta,r)$ tends to be a uniform distribution over time, which can be very far from the target distribution $\pi$.
+        \item As shown in Fig. 5(c), as step size decreases, SGLD \cite{sgld} has a high autocorrelation time while SGHMC has very low one with even lower estimation error which indicates the efficiency of SGHMC. Fig. 5(d) shows that SGLD performs worse to explore the tails of the distribution compared to SGHMC.
         \end{itemize} 
 	\begin{tikzfigure}[{\bf (a)}: Points $(\theta,r)$ simulated of 15000 steps. {\bf (b):} Points $(\theta,r)$ simulated of 150000 steps. {\bf (c):} Autocorrelation time versus estimation error for the five settings. {\bf (d):} First 50 samples of SGHMC and SGLD]
-	   \includegraphics[width=75mm]{Images/fig1ax4.pdf}
+	   \includegraphics[width=120mm]{Images/fig1ax4.pdf}
             \includegraphics[width=75mm]{Images/fig2apt.pdf}
 	    \includegraphics[width=75mm]{Images/fig3aerrt.pdf}
             \includegraphics[width=75mm]{Images/fig3btraj.pdf}
