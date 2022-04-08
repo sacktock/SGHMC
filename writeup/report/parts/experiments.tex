@@ -7,15 +7,14 @@ In this part, we reproduce and extend the section "Simulated Scenarios" by writi
 
 Firstly, to explore the performances of various sampling methods with exact gradients relative to stochastic gradients, we set up several simulated experiments based on the the true target distribution with $U(\theta) = -2\theta^2 + \theta^4$ mentioned in original paper. Also, we test on $U(\theta) = \frac{1}{2}\theta^2$ as a simple extension which can help us confirm the conclusion here and also help us more thoroughly understand the Fig. 2(a) that has the same target distribution. 
 
-\begin{figure}
-\begin{subfigure}{\textwidth}
-\includesvg[width=.95\linewidth]{parts/Images/fig1a.svg}
+\begin{figure}[h!]
+\begin{subfigure}{.5\textwidth}
+\includegraphics[width=.9\linewidth]{parts/Images/fig1a.pdf}
 \caption{Distributions of different sampling algorithms for the target function $U(\theta) = -2\theta^2 + \theta^4$}
 \label{fig1a}
 \end{subfigure}%
-
-\begin{subfigure}{\textwidth}
-\includesvg[width=.95\linewidth]{parts/Images/fig1b.svg}
+\begin{subfigure}{.5\textwidth}
+\includegraphics[width=.9\linewidth]{parts/Images/fig1b.pdf}
 \caption{Distributions of different sampling algorithms for the target function $U(\theta) = \frac{1}{2}\theta^2$}
 \label{fig1b}
 \end{subfigure}
@@ -23,11 +22,7 @@ Firstly, to explore the performances of various sampling methods with exact grad
 \label{fig:demo}
 \end{figure}
 
-
 As a baseline, we consider the standard HMC methods, both with and without the MH correction. Then we compare with the naive stochastic HMC methods in Alg. 1 of Section 2.1, which simply replaces $\nabla U(\theta)$ with $\nabla \wt{U}(\theta)$, both with and without as MH correction same as the above. Finally, we compare to the SGHMC, Alg. 2 of Section 2.3, without MH correction. Specifically, based on the current model parameters and sample size, 4 is chosen as the covariance of the stochastic gradient noise. Hence, $\nabla \wt{U}(\theta) = \nabla U(\theta) + \mathcal{N}(0,4)$ is used for stochastic gradient based samplers. And $\epsilon = 0.1$  is employed for all the cases. In all variants of HMC above, the momentum is resampled every 50 steps.
-
-
-
 
 Compared with results in Fig. 1 of the original paper, we perfectly reproduce the simulations on the true distribution $U(\theta) = -2\theta^2 + \theta^4$ in Fig. 1(a). Also, we produce the tests on another true distribution $U(\theta) = \frac{1}{2}\theta^2$ as shown in Fig. 1(b). From both figures, we can see that both the HMC and SGHMC algorithms match perfectly with the target function even without an MH correction, which validates the theoretical results; that is, both standard HMC and SGHMC maintain $\pi$ as the invariant distribution as $\epsilon \rightarrow 0$. However, the natural implementation of the stochastic approximation can be arbitrarily bad without MH step. This can be explained by the Corollary 3.1 in original paper. Because $\pi$ is no longer invariant under the dynamics of naive stochastic gradient HMC, a correction step must be introduced even before considering errors introduced by the discretization of the dynamical system in practice.
 
@@ -35,22 +30,12 @@ As a conclusion, HMC with stochastic gradients requires a frequent costly MH cor
 
 Secondly, to simply simulating from the discretized Hamiltonian dynamical systems with the various samplers compared, we compare their resulting trajectories of points $(\theta,r)$.  The compared methods are totally the same as the above. As for the details, discretization of various HMC methods are implemented in 15000 steps using the target distribution $U(\theta) = \frac{1}{2}\theta^2$ and $\epsilon$ is set as 0.1. For the noisy scenarios, the gradient is replaced by $\nabla \wt{U}(\theta) = \nabla U(\theta) + \mathcal{N}(0,4)$, the same as Fig. 1(b).
 
-
-\begin{figure}[htp] 
+\begin{figure}[h!]
     \centering
-    \subfloat[Step equals to 15000]{%
-        \includesvg[width=0.6\linewidth]{parts/Images/fig2a.svg}%
-        \label{fig:a}%
-        }%
-    \hfill%
-    \subfloat[Step equals to 150000]{%
-        \includesvg[width=0.6\linewidth]{parts/Images/fig2b.svg}%
-        \label{fig:b}%
-        }%
-    \caption{Points $(\theta,r)$ simulated from discretizations of various Hamiltonian dynamics of different steps using $U(\theta) = \frac{1}{2}\theta^2$.}
+    \includegraphics[width=0.6\linewidth]{parts/Images/fig2a.pdf}%
+    \caption{Step equals to 15000}
+     \label{fig:a}%
 \end{figure}
-
-
 
 Compared with results in Fig. 2 of the original paper, we reproduce the Fig. 2(a) in a perfect way. And we find that the path of $(\theta,r)$ from the noisy Hamiltonian system without any friction or steps diverges significantly. To correct the divergence, the naive stochastic gradient HMC without MH steps can be implemented through periodic resampling of the momentum, which may not yield the correct target distribution, as illustrated in Fig. 1(b). Then to correct this behaviour, SGHMC can be used to modify this dynamical system. The results can show that the straightforward modification to the Hamiltonian dynamics can alleviate the issues of the noise introduced by stochastic gradients. In particular, the modification allows us to again achieve the desired $\pi$ as the invariant distribution of the continuous Hamiltonian dynamical system. Moreover, Fig. 2(a) can help explain Corollary 3.1 in the original paper by seeing that even finite-length simulations from the noisy system can diverge quite substantially from those of the noise-free system.
 
@@ -62,26 +47,22 @@ $\nabla \wt{U}(\theta) = \Sigma^{-1}\theta + \mathcal{N}(0,I)$ with $\Sigma_{11}
 Compared with results in Fig. 3(a) of the original paper, we excellently reproduce the Fig. 3(a). 
 As the step size decreases, SGLD has a high autocorrelation time while SGHMC has very low autocorrelation times with even lower estimation error. In conclusion, SGHMC is indeed efficiently exploring the posterior distribution. 
 
-
-\begin{figure}[htp] 
-    \centering
-    \subfloat[Autocorrelation time versus estimation error for the five settings]{%
-        \includesvg[width=0.5\linewidth]{parts/Images/fig3a.svg}%
-        \label{fig:a}%
-        }%
-    \hfill%
-    \subfloat[First 50 samples of SGHMC and SGLD]{%
-        \includesvg[width=0.5\linewidth]{parts/Images/fig3b.svg}%
-        \label{fig:b}%
-        }%
-    \caption{Contrasting sampling of a bivariate Gaussian with correlation using SGHMC versus SGLD.}
+\begin{figure}[h!]
+\begin{subfigure}{.5\textwidth}
+\includegraphics[width=.95\linewidth]{parts/Images/fig3a.pdf}
+\caption{Autocorrelation time versus estimation error for the five setting}
+\label{fig:a}
+\end{subfigure}%
+\begin{subfigure}{.5\textwidth}
+\includegraphics[width=.95\linewidth]{parts/Images/fig3b.pdf}
+\caption{First 50 samples of SGHMC and SGLD}
+\label{fig:b}
+\end{subfigure}
+\caption{Contrasting sampling of a bivariate Gaussian with correlation using SGHMC versus SGLD.}
+\label{fig:demo}
 \end{figure}
 
 At last, to see more intuitively about the distributions of samples from SGHMC and SGLD, we reproduce Fig. 3(b) in original paper related to Fig. 3(b) here by showing the first 50 samples generated by the two samplers. We can conclude that SGLD's random-walk behaviour makes it perform worse to explore the tails of the distribution. However, SGHMC instead can drive the sampler to move along the distribution contours all the way around.
-
-
-
-
 
 \subsection{Bayesian Neural Networks for Classification}
 For the Bayesian neural network (BNN) MNIST classification we actually used the reparameterisation of SGHMC described in the section ``Connection to SGD with Momentum'' of \cite{sghmc}. The SGHMC algorithm is reframed in terms of learning rate and momentum decay, and simulates the following dynamics instead:
