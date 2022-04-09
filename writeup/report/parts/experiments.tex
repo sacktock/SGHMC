@@ -4,11 +4,11 @@
 
 \subsection{Simulated examples}
 
-In this next section we present the results and intuition behind the first three experiments in \cite{sghmc}. We reproduced these three experiments by converting the MATLAB codes provided by the authors \cite{simu_code} into Python code. We used this, rather than our own implementation of SGHMC, as our version does not directly interface with a given potential function, but only Pyro PPs. The experiments that we replicated consisted of checking whether the samples produced by SGHMC and the other algorithms actually follow the posterior distribution.
+In this next section we present the results and intuition behind the first three experiments in \cite{sghmc}. We reproduced these three experiments by converting the MATLAB codes provided by the authors \citeauthor{sghmc} \cite{simu_code} into Python code. We used this, rather than our own implementation of SGHMC, as our version does not directly interface with a given potential function, but only Pyro PPs. The experiments that we replicated consisted of checking whether the samples produced by SGHMC and the other algorithms actually follow the target distribution.
 
 \subsubsection*{Experiment 1}
 
-As in \cite{sghmc} we considered the potential function $U(\theta) = -2\theta^2 + \theta^4$. This is sufficient for the purpose of checking the convergence to the posterior of HMC. To check the theoretical convergence of Naïve SGHMC and SGHMC we must introduce noise into this potential, and so we set:
+As in \cite{sghmc} we considered the potential function $U(\theta) = -2\theta^2 + \theta^4$. This is sufficient for the purpose of checking the convergence to the target distribution for HMC. To check that the theoretical convergence of Naïve SGHMC and SGHMC are true or not we first introduce noise into the gradientl, and so we set:
 $$\nabla \widetilde{U}(\theta) = \nabla U(\theta) + \mathcal{N}(0,4)$$
 when we consider the noisy methods. This corresponds to setting the noise covariance to $V=4$ in the description of Naïve SGHMC we gave earlier. We then take samples using HMC, Naïve SGHMC and SGHMC. We also note that both HMC and Naïve SGHMC use Metropolis Hastings corrections (MH), while SGHMC has no need to. This allows us to test 5 algorithms: HMC (with MH), HMC (without MH), Naïve SGHMC (with MH), Naïve SGHMC (without MH), and SGHMC. We not only performed the experiments on $U(\theta) = -2\theta^2 + \theta^4$, but also on $U(\theta) = \theta^2$. The results are shown in \cref{fig:demo1,fig:demo2}.
 
