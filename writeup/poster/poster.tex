@@ -130,9 +130,9 @@
 	We reproduced the following experiments from the paper:
 \begin{itemize}
     \item Sampling $\theta$ from the potential function $U(\theta) = -2\theta^2 + \theta^4$ with noise added to the gradient $\nabla \widetilde U(\theta)$, using the following algorithms: HMC (with and without MH correction), Naive SGHMC (with and without MH correction) and SGHMC.
-    \item Using HMC to sample $(\theta,r)$ from the potential function $U(\theta) = \frac{1}{2}\theta^2$ with perfect gradients, and noisy gradients using $\mathcal{N}(0,4)$ as a proxy for the noisy in $\tilde{U}(\theta)$.
+    \item Using HMC to sample $(\theta,r)$ from the potential function $U(\theta) = \frac{1}{2}\theta^2$ with perfect gradients, and noisy gradients using $\mathcal{N}(0,4)$ as a proxy for the noise in $\tilde{U}(\theta)$.
     \item Comparing the autocorrelation times of SGHMC and SGLD.
-    \item Classifying the MNIST dataset using SGHMC as well as with SGD, SGD with momentum, and SGLD
+    \item Classifying the MNIST dataset using SGHMC as well as with SGD, SGD with momentum, and SGLD.
 \end{itemize} 
 \begin{tikzfigure}[Some of the figures from \cite{sghmc} which we aimed to reproduce. {\bf Left:} using HMC to sample $(\theta,r)$. {\bf Center:} Samples from the potential function $U(\theta) = -2\theta^2 + \theta^4$. {\bf Right:} learning curves for MNIST classification]
             \includegraphics[width=100mm]{Images/reproduce1.png}
@@ -143,8 +143,8 @@
 		We also extended the results of \cite{sghmc} in a number of ways:
 		
 	\begin{itemize}
-    \item We extended the 'No U-Turn Sampler' (NUTS) from \cite{nuts} to work with SGHMC to produce our novel algorithm SGNUTS
-    \item Ran the Bayesian neural network (BNN) for classification experiment on a new dataset, namely, FashionMNIST. \cite{fashion-mnist}
+    \item We extended the 'No U-Turn Sampler' (NUTS) from \cite{nuts} to work with SGHMC to produce our novel algorithm SGNUTS.
+    \item Ran the Bayesian neural network (BNN) for classification experiment on a new dataset, namely, FashionMNIST \cite{fashion-mnist}.
     \item We demonstrated that our implementation of SGHMC can be used with Convolutional Neural Networks (CNNs) to classify CIFAR10 \cite{cifar10}.
     \item We implemented a scheme for estimating the gradient noise ($B$ in the literature and in what follows) and used this to increase the algorithm's sampling accuracy.
 \end{itemize}
@@ -152,7 +152,7 @@
 	}
 
     		\block{Implementation Details}{We implemented the following algorithms from scratch: HMC, SGHMC, SGLD , SGD, SGD with Nesterov momentum and SGNUTS. All of our implementations subclass Pyro's \texttt{MCMCKernel} and are designed to be used directly with Pyro \cite{pyro} — a universal probabilistic programming language (PPL) written in Python. Pyro comes with useful built in functions that transform probabilistic programs (PP) into potential functions that automatically handle gradient computations. The main caveat of stochastic gradient samplers and optimizers is that we require that the potential function has the form: $$\widetilde{U}(\theta) =  -\frac{|\mathcal{D}|}{|\widetilde{\mathcal{D}}|} \log p(\widetilde{\mathcal{D}} \: | \: \theta) - \log p (\theta)$$
-Using our implementations we illustrate below how sampling algorithms differ from optimization algorithms; while sampling algorithms visit the full posterior $p(\theta \: | \: \mathcal{D})$ as they draw samples, optimization algoithms hone in on the MAP estimate $\text{argmax}_{\theta} \{ p(D \: | \: \theta) \cdot p(\theta) \}$. 
+Using our implementations we illustrate below how sampling algorithms differ from optimization algorithms; while sampling algorithms visit the full posterior $p(\theta \: | \: \mathcal{D})$ as they draw samples, optimization algorithms hone in on the MAP estimate $\text{argmax}_{\theta} \{ p(D \: | \: \theta) \cdot p(\theta) \}$. 
 	\begin{tikzfigure}[{\bf Far left}: SGHMC (\texttt{batch\_size} $= 5, \eta = 0.01, \alpha=0.1$ \texttt{num\_steps}$=10$, \texttt{resample\_n} $=50$). {\bf Mid left:} SGLD (\texttt{batch\_size} $= 5, \eta = 0.1, \alpha=0.1$ \texttt{num\_steps}$=5$). {\bf Mid right:} SGD (\texttt{batch\_size} $= 5, \eta = 0.001$). {\bf Far right:} SGD with Nesterov momentum (\texttt{batch\_size} $= 5, \eta = 0.001, \alpha=0.1$)]
             \includegraphics[width=75mm]{Images/SGHMC_demo.png}
             \includegraphics[width=75mm]{Images/SGLD_demo.png}
@@ -164,7 +164,7 @@ Using our implementations we illustrate below how sampling algorithms differ fro
 \block{Simulated Examples}{
 			Below we present our reproductions of the simulated scenarios in Section 4.1 of \cite{sghmc}. We implemented these toy examples in Python using the Matlab codes provided by the authors of the original paper \cite{simu_code}. We draw the following conclusions:
 		\begin{itemize}
-        \item Fig. 5(a) illustrates that the naive SGHMC fails to maintain the target distribution as its invariant distribution unless we add a costly MH correction step. Conversely, by adding friction, SGHMC maintains the target distribution as its invariant distribution, which validates the theorectical results in \cite{sghmc}.
+        \item Fig. 5(a) illustrates that the naive SGHMC fails to maintain the target distribution as its invariant distribution unless we add a costly MH correction step. Conversely, by adding friction, SGHMC maintains the target distribution as its invariant distribution, which validates the theoretical results in \cite{sghmc}.
         \item Fig. 5(b) shows that friction (green) keeps Hamiltonian dynamics much closer to the true Hamiltonian dynamics (blue) in a noisy system. Fig. 5(b) supports the results of Theorem 3.1 in \cite{sghmc}, that the sampled distribution tends to the uniform distribution over time, rather than the target distribution.
         \item Shown in Fig. 5(c): we see that for small step sizes SGLD \cite{sgld} has a high autocorrelation time while SGHMC has a very low autocorrelation time with even lower estimation error. This indicates the advantage of adopting SGHMC. Fig. 5(d) shows that SGLD performs worse in exploring the tails of the distribution when compared to SGHMC.
         \end{itemize} 
