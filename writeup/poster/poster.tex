@@ -63,37 +63,36 @@
 		%%% First column %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		\column{0.5}
 		\block{Stochastic Gradient Hamiltonian Monte Carlo}{
-		Hamiltonian Monte Carlo (HMC) provides a way to sample from a posterior distribution using all data available to it. To do this it must produce the potential function $U(\theta) \propto \log p(\theta | \mathcal{D})$, as well as its gradient. Using all of the data to find $U(\theta)$ is computationally expensive for large datasets, rendering HMC useless. This motivated the production of the Stochastic Gradient Hamiltonian Monte Carlo algorithm (SGHMC), which is introduced in \cite{sghmc}. It uses batch data to produce noisy estimates of the potential function, which gives SGHMC dramatic speed-up when compared to HMC. In this paper, Chen et al introduce a Naive SGHMC algorithm, as well as SGHMC itself. They demonstrate links between SGHMC and both Stochastic Gradient Descent with momentum, and Stochastic Gradient Langevin Dynamics. They then run experiments using SGHMC. We reproduced SGHMC, and replicated a number of Chen et al's experiments. The repository for our code is found at https://github.com/sacktock/SGHMC.
+		Hamiltonian Monte Carlo (HMC) provides us with a useful way to sample from a posterior distributions. To do this we require a potential function $U(\theta) \propto \log p(\theta | \mathcal{D})$, as well as means to compute the gradient. At each step HMC uses all the data available to it; evaluating $U(\theta)$ and computing $\nabla U(\theta)$ is computationally expensive for large datasets, rendering HMC almost useless. As such, this motivated the development of the Stochastic Gradient Hamiltonian Monte Carlo algorithm (SGHMC), which is introduced by the paper in question \cite{sghmc}. It uses randomly sampled mini-batches data to produce noisy estimates of the gradient $\nabla \widetilde U(\theta)$, which gives SGHMC a significant speed-up compared to HMC. In this paper, Chen et al first introduce a Naive SGHMC algorithm, as well as SGHMC itself. They demonstrate links between SGHMC and both Stochastic Gradient Descent (SGD) with momentum, and Stochastic Gradient Langevin Dynamics (SGLD). They then run experiments using SGHMC. We reproduced SGHMC, and replicated a number of Chen et al's experiments. The repository for our code is found at https://github.com/sacktock/SGHMC.
 	
 		
 	}
 		\block{The Core Algorithms}{
-		The first four are sampling based methods - we sample parameters $\theta$ from a model's posterior. We write here the transition step that, upon iterating, gives us $\theta \sim p(\theta | \mathcal{D})$, where $\mathcal{D}$ is all the data available to us. $\tilde{\mathcal{D}}$ is a randomly sampled batch of this data. \\
+		Below we introduce the major algorithms discussed in the paper. The first four algorithms are sampling algorithms - we sample parameters $\theta$ from a model's posterior. We write here the transition step that, upon iterating, gives us $\theta \sim p(\theta | \mathcal{D})$, where $\mathcal{D}$ is all the data available to us. $\tilde{\mathcal{D}}$ is a randomly sampled batch of this data. \\
 		
 \begin{minipage}[t]{0.43\linewidth}
 	\innerblock{Hamiltonian Monte Carlo (HMC)}{
 		$$\Delta \theta \leftarrow \epsilon M^{-1}r \qquad \Delta r \leftarrow - \epsilon \nabla U(\theta)$$
-		where $$ U(\theta) \defeq - \sum_{x \in \mathcal{D}}\log p(x \mid \theta) - \log p(\theta)$$}
+		where $$ \nabla U(\theta) \defeq - \sum_{x \in \mathcal{D}} \nabla \log p(x \mid \theta) -  \nabla \log p(\theta)$$}
 \end{minipage}
 \begin{minipage}[t]{0.57\linewidth}
 \innerblock{Naive Stochastic Gradient Hamiltonian Monte Carlo (Naive SGHMC)}{$$\Delta \theta \leftarrow \epsilon M^{-1}r \qquad \Delta r \leftarrow - \epsilon \nabla \tilde{U}(\theta)$$
-		where $$ \tilde{U}(\theta) = - \frac{|\mathcal{D}|}{|{\tilde{\mathcal{D}}}|}\sum_{x \in \tilde{\mathcal{D}}} \nabla \log p(x \mid \theta) - \nabla \log p(\theta)$$}
+		where $$ \nabla \tilde{U}(\theta) = - \frac{|\mathcal{D}|}{|{\tilde{\mathcal{D}}}|}\sum_{x \in \tilde{\mathcal{D}}} \nabla \log p(x \mid \theta) - \nabla \log p(\theta)$$}
 \end{minipage}
 
 \begin{minipage}[t]{0.7\linewidth}
 		\innerblock{Stochastic Gradient Hamiltonian Monte Carlo (SGHMC)}{$$\Delta \theta \leftarrow \epsilon M^{-1}r \qquad \Delta r \leftarrow - \epsilon \nabla \tilde{U}(\theta) - \epsilon C M^{-1} r + \mathcal{N}(0,2 (C-\hat{B})\epsilon)$$
-		where $$ \tilde{U}(\theta) = - \frac{|\mathcal{D}|}{|{\tilde{\mathcal{D}}}|}\sum_{x \in \tilde{\mathcal{D}}} \nabla \log p(x \mid \theta) - \nabla \log p(\theta)$$
-		and $\hat{B}$ is an estimation of the noise covariance $B$ encapsulated by $\nabla \tilde{U}(\theta) = \nabla U(\theta) + \mathcal{N}(0,2 B\epsilon)$, and $C$ is a hyperparameter}
+		where $$\nabla \tilde{U}(\theta) = - \frac{|\mathcal{D}|}{|{\tilde{\mathcal{D}}}|}\sum_{x \in \tilde{\mathcal{D}}} \nabla \log p(x \mid \theta) - \nabla \log p(\theta)$$
+		and $\hat{B}$ is an estimation of the noise covariance $B$ encapsulated by $\nabla \tilde{U}(\theta) = \nabla U(\theta) + \mathcal{N}(0,2 B\epsilon)$, and $C$ is a user-defined hyperparameter}
 \end{minipage}
 \begin{minipage}[t]{0.3\linewidth}
-		\innerblock{Stochastic Gradient Langevin Dynamics (SGLD)}{$$\Delta \theta \leftarrow - \eta \nabla U(\theta) + \mathcal{N}(0,B)$$
+		\innerblock{Stochastic Gradient Langevin Dynamics (SGLD)}{$$\Delta \theta \leftarrow - \eta \nabla \widetilde U(\theta) + \mathcal{N}(0,B)$$
 		
 		where $B$ is the covariance of injected noise.\\}
 	    \end{minipage}
-				
-		The next one is an optimization based method, which produces $\theta$ that are at the mode of the posterior distribution - MAP estimates. \\
+		The final algorithm (SGD) is an optimization algorithm, the idea is it iteratively converges to the mode of the posterior distribution - giving us a point estimate for the MAP. \\
 
-		\innerblock{Stochastic Gradient Descent (SGD)}{$$\Delta \theta \leftarrow  \alpha \Delta \theta - \eta \nabla U(\theta)$$
+		\innerblock{Stochastic Gradient Descent (SGD)}{$$\Delta \theta \leftarrow  \alpha \Delta \theta - \eta \nabla \widetilde U(\theta)$$
 		
 		where $\alpha$ is a momentum hyperparameter. Standard SGD sets $\alpha=0$ } 
 		
@@ -118,32 +117,32 @@
 		
 		%%% Second column %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		\column{0.5}
-			\block{Our Reproduction and Extensions}{
+			\block{The Reproducibility Challenge and Extensions}{
 	We reproduced the following experiments from the paper:
 \begin{itemize}
-    \item Sampling $\theta$ from the posterior with $U(\theta) = -2\theta^2 + \theta^4$ using HMC, Naive SGHMC and SGHMC
-    \item Sampling $(\theta,r)$ generated from $U(\theta) = \frac{1}{2}\theta^2$ with HMC, and from $U(\theta) = \frac{1}{2}\theta^2 + \mathcal{N}(0,4)$ as a proxy for the noisy $\tilde{U}(\theta)$ in SGHMC
+    \item Sampling $\theta$ from the potential function $U(\theta) = -2\theta^2 + \theta^4$ with noise added to the gradient $\nabla \widetilde U(\theta)$, using the following algorithms: HMC (with and without MH correction), Naive SGHMC (with and without MH correction) and SGHMC.
+    \item Using HMC to sample $(\theta,r)$ from the potential function $U(\theta) = \frac{1}{2}\theta^2$ with perfect gradients, and noisy gradients using $\mathcal{N}(0,4)$ as a proxy for the noisy in $\tilde{U}(\theta)$.
     \item Comparing the autocorrelation times of SGHMC and SGLD.
     \item Classifying the MNIST dataset using SGHMC as well as with SGD, SGD with momentum, and SGLD
 \end{itemize} 
-\begin{tikzfigure}[Figures from \cite{sghmc} which we aimed to reproduce. On left, $(\theta,r)$ samples generated from various methods. Center, $\theta$ samples generated from various methods. Right, learning curves for MNIST classification]
+\begin{tikzfigure}[Some of the figures from \cite{sghmc} which we aimed to reproduce. {\bf Left:} using HMC to sample $(\theta,r)$. {\bf Center:} Samples from the potential function $U(\theta) = -2\theta^2 + \theta^4$. {\bf Right:} learning curves for MNIST classification]
             \includegraphics[width=100mm]{Images/reproduce1.png}
             \includegraphics[width=100mm]{Images/reproduce2.png}
             \includegraphics[width=100mm]{Images/reproduce3.png}
             \end{tikzfigure}
 
-		We extended the results of \cite{sghmc} in the following ways:
+		We also extended the results of \cite{sghmc} in a number of ways:
 		
 	\begin{itemize}
     \item We extended the 'No U-Turn Sampler' (NUTS) from \cite{nuts} to work with SGHMC to produce our novel algorithm SGNUTS
-    \item We ran experiments on a new dataset of FashionMNIST
-    \item We briefly introduced some Convolutional Neural Networks (CNNs) to see how accurate SGHMC was at classifying CIFAR10
-    \item We attempted to evaluate the noisiness of the data ($B$ in the literature and in what follows) and used this to increase the algorithm's efficiency
+    \item Ran experiments on a new dataset of FashionMNIST.
+    \item We demonstrated that our implementation of SGHMC can be used with Convolutional Neural Networks (CNNs) to classify CIFAR10
+    \item We implemented a scheme for estimating the gradient noise ($B$ in the literature and in what follows) and used this to increase the algorithm's sampling accuracy.
 \end{itemize}
 		
 	}
 
-    		\block{Implementation Details}{We implemented the following algorithms from scratch: HMC, SGHMC, SGLD , SGD, SGD with Nesterov momentum and SGNUTS. All of our implementations subclass Pyro's \texttt{MCMCKernel} and are designed to be used directly with Pyro \cite{pyro} — a universal probabilistic programming language (PPL) written in Python. Pyro comes with useful built in functions that transform probabilistic programs (PP) into potential functions that automatically handle gradient computations. The main caveat of stochastic gradient samplers and optimizers is that we require that the potential function has the form: $$\widetilde{U}(\theta) =  -\frac{|D|}{|\widetilde{D}|} \log p(\widetilde{D} \: | \: \theta) - \log p (\theta)$$
+    		\block{Implementation Details}{We implemented the following algorithms from scratch: HMC, SGHMC, SGLD , SGD, SGD with Nesterov momentum and SGNUTS. All of our implementations subclass Pyro's \texttt{MCMCKernel} and are designed to be used directly with Pyro \cite{pyro} — a universal probabilistic programming language (PPL) written in Python. Pyro comes with useful built in functions that transform probabilistic programs (PP) into potential functions that automatically handle gradient computations. The main caveat of stochastic gradient samplers and optimizers is that we require that the potential function has the form: $$\widetilde{U}(\theta) =  -\frac{|\mathcal{D}|}{|\widetilde{\mathcal{D}}|} \log p(\widetilde{\mathcal{D}} \: | \: \theta) - \log p (\theta)$$
 Using our implementations we illustrate below how sampling algorithms differ from optimization algorithms; while sampling algorithms visit the full posterior $p(\theta \: | \: D)$ as they draw samples, optimization algoithms hone in on the MAP estimate $\text{argmax}_{\theta} \{ p(D \: | \: \theta) \cdot p(\theta) \}$. 
 	\begin{tikzfigure}[{\bf Far left}: SGHMC (\texttt{batch\_size} $= 5, \eta = 0.01, \alpha=0.1$ \texttt{num\_steps}$=10$, \texttt{resample\_n} $=50$). {\bf Mid left:} SGLD (\texttt{batch\_size} $= 5, \eta = 0.1, \alpha=0.1$ \texttt{num\_steps}$=5$). {\bf Mid right:} SGD (\texttt{batch\_size} $= 5, \eta = 0.001$). {\bf Far right:} SGD with Nesterov momentum (\texttt{batch\_size} $= 5, \eta = 0.001, \alpha=0.1$)]
             \includegraphics[width=75mm]{Images/SGHMC_demo.png}
@@ -154,11 +153,11 @@ Using our implementations we illustrate below how sampling algorithms differ fro
  }
 		
 \block{Simulated Examples}{
-			Simulated scenarios are reproduced and extended from scratch based on the Matlab version of the original paper \cite{simu_code}. Conclusions can be drawn as follows:
+			Below we present our reproductions of the simulated scenarios in Section 4.1 of \cite{sghmc}. We implemented these toy examples in Python using the Matlab codes provided by the authors of the original paper \cite{simu_code}. We draw the following conclusions:
 		\begin{itemize}
-        \item As shown in Fig. 5(a), compared with naive stochastic gradient HMC, which requires a frequent costly MH correction step, SGHMC maintains more perfectly on both of the desired target distributions.
-        \item As shown in Fig. 5(b), compared with naive stochastic gradient HMC without MH, which may not yield the correct target distribution, SGHMC can be used to modify the noisy dynamical system more correctly. The extension on the step size in Fig. 2(b) proves the Theorem 3.1 that $p_t(\theta,r)$ tends to be a uniform distribution over time, which can be very far from the target distribution $\pi$.
-        \item As shown in Fig. 5(c), as step size decreases, SGLD \cite{sgld} has a high autocorrelation time while SGHMC has very low one with even lower estimation error which indicates the efficiency of SGHMC. Fig. 5(d) shows that SGLD performs worse to explore the tails of the distribution compared to SGHMC.
+        \item Fig. 5(a) illustrates that the naive SGHMC fails to maintain the target distribution as its invariant distribution unless we add a costly MH correction step. Conversely, by adding friction, SGHMC maintains the target distribution as its invariant distribution, which validates the theorectical results in \cite{sghmc}.
+        \item Fig. 5(b) shows that friction (green) keeps Hamiltonian dynamics much closer to the true Hamiltonian dynamics (blue) in a noisy system. Fig. 2(b) supports the results of Theorem 3.1 in \cite{sghmc}, that $p_t(\theta,r)$ tends to a uniform distribution over time, which in most cases is very far from the target distribution.
+        \item Shown in Fig. 5(c): we see as the step size decreases, SGLD \cite{sgld} has a high autocorrelation time while SGHMC has a very low autocorrelation time with even lower estimation error. This indicates the advantage of adopting SGHMC. Fig. 5(d) shows that SGLD performs worse in exploring the tails of the distribution when compared to SGHMC.
         \end{itemize} 
 	\begin{tikzfigure}[{\bf (a)}: Points $(\theta,r)$ simulated of 15000 steps. {\bf (b):} Points $(\theta,r)$ simulated of 150000 steps. {\bf (c):} Autocorrelation time versus estimation error for the five settings. {\bf (d):} First 50 samples of SGHMC and SGLD]
 	   \includegraphics[width=120mm]{Images/fig1ax4.pdf}
@@ -170,14 +169,12 @@ Using our implementations we illustrate below how sampling algorithms differ fro
 		
 		\block{Further Research}{
 		\begin{itemize}
-		    \item Implementation of a joint SGNUTS and SGHMC algorithm - SGNUTS quickly reaches the posterior, however SGHMC is faster at sampling when at the posterior. We could investigate the power of using SGNUTS for the first few epochs, followed by SGHMC.
-		   \item Fine-tuning the CNN used to classify CIFAR10. Currently we have shown that our SGHMC implementation can start classifying CIFAR10, however our accuracies could be higher with more time to fine-tune it.
-		   \item Investigate further methods of estimating the noise model $B$, as using empirical Fisher was computationally expensive
-		   \item Compare thoroughly with the more popularly used Variational Inference Method.
+		    \item Implementation of a hybrid SGNUTS and SGHMC algorithm - SGNUTS quickly reaches the posterior, however SGHMC is faster at sampling when at the posterior. We could investigate the power of using SGNUTS for the first few epochs or during warmup, followed by SGHMC.
+		   \item Tuning the CNN used to classify CIFAR10. Currently we have shown that our implementation of SGHMC can start classifying CIFAR10, however we could acheive better accuracies with more time to investigate other architectures and do a more thorough hyperparameter search.
+		   \item Further investigate methods of estimating the gradient noise $B$, as using empirical Fisher was computationally expensive for high dimensional models.
+		   \item Compare more thoroughly our implementation of SGHMC againt Variational Inference.
 		\end{itemize}		}
 		
-
-	
 	\end{columns}
 	
 			\block{References}{
