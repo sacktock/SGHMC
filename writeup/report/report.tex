@@ -24,13 +24,13 @@
 \usepackage[final]{microtype}
 \usepackage{caption}
 \usepackage{subcaption}
+\usepackage{svg}
 
 \usepackage[charter]{mathdesign}
 \usepackage[T1]{fontenc}
 
 % Fix me notes
 \usepackage[draft]{fixme}
-\usepackage{svg}
 \fxusetheme{color}
 
 % Theorem styles
@@ -63,7 +63,7 @@ by Tianqi Chen, Emily B. Fox and Carlos Guestrin}
 
 	\maketitle
 
-	\abstract{In this report we focus on the Stochastic Gradient Hamiltonian Monte Carlo (SGHMC) algorithm proposed in \citetitle{sghmc} \cite{sghmc} by \citeauthor{sghmc}. We reproduce a number of the experiments from this paper, and we explain the intuition behind a number of their results. On top of this, we extended their work in a number of ways. We attempted to estimate the value of the noise model $\hat{B}$ in their paper, and we test the algorithm on more than just the MNIST dataset. We also introduce a novel algorithm which we have named SGNUTS, based on the `No U-Turn Sampler' (NUTS) introduced in \cite{nuts}.}
+	\abstract{In this report we focus on the Stochastic Gradient Hamiltonian Monte Carlo (SGHMC) algorithm proposed in \citetitle{sghmc} \cite{sghmc} by \citeauthor{sghmc}. We reproduce a number of the experiments from this paper, and we explain the intuition behind several of their results. On top of this, we extended their work in a number of ways. We attempted to estimate the value of the noise model $\hat{B}$ in their paper, and we test the algorithm on more than just the MNIST dataset. We also introduce a novel algorithm which we have named SGNUTS, based on the `No U-Turn Sampler' (NUTS) introduced in \cite{nuts}.}
 
 
 	\input{parts/introduction.tex}
