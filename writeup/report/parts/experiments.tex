@@ -4,74 +4,70 @@
 
 \subsection{Simulated examples}
 
-In this section we reproduced 3 experiments run in \cite{sghmc}. We did this by converting the MATLAB code provided in the paper \cite{simu_code} into Python code. We used this, rather than our homemade implementation of SGHMC, as our version does not currently interface with a given potential function, but only Pyro stochastic models. The experiments that we replicated consisted of checking whether the samples produced by SGHMC and the other algorithms actually follow the posterior distribution.
+In this section we reproduced 3 experiments run in \cite{sghmc}. We did this by converting the MATLAB code provided in \cite{simu_code} into Python code. We used this, rather than our homemade implementation of SGHMC, as our version does not currently interface with a given potential function, but only Pyro stochastic models. The experiments that we replicated consisted of checking whether the samples produced by SGHMC and the other algorithms actually follow the posterior distribution.
 
 \subsubsection*{Experiment 1}
 
-As in \cite{sghmc} we considered the potential function $U(\theta) = -2\theta^2 + \theta^4$. This is sufficient for the purpose of checking the convergence to the posterior of HMC. To check the theoretical convergence of Naïve SGHMC and SGHMC we must introduce noise into this potential, and so we set $$\nabla \widetilde{U}(\theta) = \nabla U(\theta) + \mathcal{N}(0,4)$$
-when we consider the noisy methods. This corresponds to setting the noise covariance to $V=4$ in the description of Naive SGHMC we gave earlier. We then take samples using HMC, Naïve SGHMC and SGHMC. We also note that both HMC and Naïve SGHMC use Metropolis Hastings corrections (MH), while SGHMC has no need to. This allows us to test 5 algorithms: HMC (with MH), HMC (without MH), Naïve SGHMC (with MH), Naïve SGHMC (without MH), and SGHMC. We not only performed the experiments on $U(\theta) = -2\theta^2 + \theta^4$, but also on $U(\theta) = \theta^2$. The results are shown in figure \ref{fig:demo}
+As in \cite{sghmc} we considered the potential function $U(\theta) = -2\theta^2 + \theta^4$. This is sufficient for the purpose of checking the convergence to the posterior of HMC. To check the theoretical convergence of Naïve SGHMC and SGHMC we must introduce noise into this potential, and so we set:
+$$\nabla \widetilde{U}(\theta) = \nabla U(\theta) + \mathcal{N}(0,4)$$
+when we consider the noisy methods. This corresponds to setting the noise covariance to $V=4$ in the description of Naïve SGHMC we gave earlier. We then take samples using HMC, Naïve SGHMC and SGHMC. We also note that both HMC and Naïve SGHMC use Metropolis Hastings corrections (MH), while SGHMC has no need to. This allows us to test 5 algorithms: HMC (with MH), HMC (without MH), Naïve SGHMC (with MH), Naïve SGHMC (without MH), and SGHMC. We not only performed the experiments on $U(\theta) = -2\theta^2 + \theta^4$, but also on $U(\theta) = \theta^2$. The results are shown in \cref{fig:demo1,fig:demo2}.
 
 \begin{figure}[h!]
-\begin{subfigure}{.5\textwidth}
-\includegraphics[width=.9\linewidth]{parts/Images/fig1a.pdf}
-\caption{Distributions of different sampling algorithms for the target function $U(\theta) = -2\theta^2 + \theta^4$}
-\label{fig1a}
-\end{subfigure}%
-\begin{subfigure}{.5\textwidth}
-\includegraphics[width=.9\linewidth]{parts/Images/fig1b.pdf}
-\caption{Distributions of different sampling algorithms for the target function $U(\theta) = \frac{1}{2}\theta^2$}
-\label{fig1b}
-\end{subfigure}
-\caption{Empirical distributions associated with various sampling algorithms relative to the different true target distributions.}
-\label{fig:demo}
+  \includegraphics[width=.9\linewidth]{parts/Images/fig1a.pdf}
+  \caption{Distributions of different sampling algorithms for the target function $U(\theta) = -2\theta^2 + \theta^4$}
+  \label{fig1a}
+  \label{fig:demo1}
 \end{figure}
 
+\begin{figure}[h!]
+  \includegraphics[width=.9\linewidth]{parts/Images/fig1b.pdf}
+  \caption{Distributions of different sampling algorithms for the target function $U(\theta) = \frac{1}{2}\theta^2$}
+  \label{fig:demo2}
+\end{figure}
 
+It can be seen that both HMC algorithms perform well, as does Naïve SGHMC with MH corrections. These 3 are computationally slow when used on large datasets (as already discussed). Naïve SGHMC does not converge to the correct distribution, empirically confirming Corollary 3.1 of \cite{sghmc}. SGHMC is fast and converges, and so it is a successful algorithm. We note here that our diagram for $U(\theta) = -2\theta^2 + \theta^4$ mirrors that in the paper closely.
 
-It can be seen that both HMC algorithms perform well, as does Naïve SGHMC with MH corrections. These 3 are computationally slow when used on large datasets (as already discussed). Naïve SGHMC does not converge to the correct distribution, as is theoretically shown in Corollary 3.1 in \cite{sghmc}. SGHMC is fast and converges, and so it is a successful algorithm. We note here that our diagram for $U(\theta) = -2\theta^2 + \theta^4$ mirrors those in the paper closely.
 
 \subsubsection*{Experiment 2}
 
 Next we sampled not just $\theta$ using these algorithms, but $(\theta, r)$. Except in the case specified, we did not resample the momentum $r$ here. We plotted the samples found using Hamiltonian Dynamics (HMC), Noisy Hamiltonian Dynamics (Naïve SGHMC), Noisy Hamiltonian Dynamics with momentum resampling (Naïve SGHMC) and Noisy Hamiltonian Dynamics with friction (SGHMC). We used $U(\theta) = \frac{1}{2}\theta^2$, and for the noisy algorithms, as before, we used 
-$\nabla \widetilde{U}(\theta) = \nabla U(\theta) + \mathcal{N}(0,4)$
-
-The results are shown in figure \ref{theta_r_samples}, which demonstrate our results match that of the papers strongly. 
+$\nabla \widetilde{U}(\theta) = \nabla U(\theta) + \mathcal{N}(0,4)$. The results are shown in \cref{fig:theta_r_samples}, which closely match those of \cite{sghmc}. Note that there it is said that the samplers were run for 15000 steps, however their plot shows far fewer points. We simulated for 15000 steps and for 360, and decided that the later better illustrated the dynamics and aligned more closely with the original plot.
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=0.6\linewidth]{parts/Images/fig2a.pdf}%
-    \caption{Step equals to 15000}
-     \label{fig:a}%
+    \includegraphics[width=0.9\linewidth]{parts/Images/fig2a.pdf}%
+    \caption{Plotting the trajectory of $(\theta, r)$ under various samplers for 360 steps}
+     \label{fig:theta_r_samples}%
 \end{figure}
 
-These results show that Naïve SGHMC causes divergence in the samples. This problem is mitigated somewhat when we introduce resampling of $r$ every 50 steps, and is mitigated further if we introduce SGHMC. WHAT ACTUALLY DOES DIVERGENCE MEAN IN THIS CONTEXT, CAN SOMEONE ELSE DO THIS SECTION PLZ
+These results show that Naïve SGHMC diverges from the true distribution in the samples. This problem is mitigated somewhat when we introduce resampling of $r$ every 50 steps, and is mitigated further if we introduce SGHMC.
 
 \subsubsection*{Experiment 3}
 
 Thirdly, we consider a correlated distribution, as is done in \cite{sghmc}. They note that the strength of HMC is typically in its efficiency in sampling from correlated distributions, and that SGHMC shares this. We replicated the paper's experiment in which they contrast SGHMC and Stochastic Gradient Langevin Dynamics (SGLD) by considering a potential function of $U(\theta)=\frac{1}{2}\theta^T\Sigma^{-1}\theta$, with
 $\nabla \widetilde{U}(\theta) = \Sigma^{-1}\theta + \mathcal{N}(0,I)$ with $\Sigma_{11} = \Sigma_{22} = 1$ and correlation $\rho = \Sigma_{12} = 0.9$.  
 
-The first plot shows 50 samples produced using both algorithms. The second shows the average absolute error of the sample covariance against autocorrelation time (for more details see \cite{sghmc}. Our reproductions can be seen alongside the originals in figure \ref{}
+See \cref{fig:sghmc vs sgld} for the results. The first plot shows 50 samples produced using both algorithms. The second shows the average absolute error of the sample covariance against autocorrelation time (for more details see \cite{sghmc}.
 
 
 \begin{figure}[h!]
-\begin{subfigure}{.5\textwidth}
-\includegraphics[width=.95\linewidth]{parts/Images/fig3a.pdf}
-\caption{Autocorrelation time versus estimation error for the five setting}
-\label{fig:a}
-\end{subfigure}%
-\begin{subfigure}{.5\textwidth}
-\includegraphics[width=.95\linewidth]{parts/Images/fig3b.pdf}
-\caption{First 50 samples of SGHMC and SGLD}
-\label{fig:b}
-\end{subfigure}
-\caption{Contrasting sampling of a bivariate Gaussian with correlation using SGHMC versus SGLD.}
-\label{fig:demo}
+  \begin{subfigure}{.5\textwidth}
+  \includegraphics[width=.95\linewidth]{parts/Images/fig3b.pdf}
+  \caption{First 50 samples of SGHMC and SGLD}
+  \end{subfigure}
+  \begin{subfigure}{.5\textwidth}
+  \includegraphics[width=.95\linewidth]{parts/Images/fig3a.pdf}
+  \caption{Autocorrelation time versus estimation error for the five setting}
+  \end{subfigure}%
+  \caption{Contrasting sampling of a bivariate Gaussian with correlation using SGHMC versus SGLD.}
+  \label{fig:sghmc vs sgld}
 \end{figure}
 
 We can see from this that samples from SGHMC quickly become uncorrelated, which is not true in SGLD. While both SGHMC and SGLD accurately sample from the posterior, SGHMC needs fewer samples to fully explore the posterior distribution. Therefore SGHMC has a faster mixing time than SGLD.
 
+
 \subsection{Bayesian Neural Networks for Classification}
+
 For the Bayesian neural network (BNN) MNIST classification we actually used the reparameterisation of SGHMC described in the section ``Connection to SGD with Momentum'' of \cite{sghmc}. The SGHMC algorithm is reframed in terms of learning rate and momentum decay, and simulates the following dynamics instead:
 $$\begin{cases}
 \nabla \theta = v\\
@@ -90,7 +86,7 @@ For the momentum based algorithms, SGHMC and SGD with momentum, we tried $\eta \
 
 For SGLD and SGD, we tried $\eta \in \{1.0, 2.0, 4.0, 6.0\} \times 10^{-5}$, for SGLD we also tried learning rate annealing but it proved not to make much of a difference in this setting so we ignored it in the end. The best configuration for SGLD was $\eta = 4.0\times 10^{-5}$, and for SGD the best configuration was $\eta = 1.0\times 10^{-5}$.
 
-For MNIST we ran each of the algorithms for 800 epochs with 50 warmup epochs. For the sampling algorithms we do Bayesian averaging over all the sampled parameterisations of the BNN after warmup as is described in Section II of \cite{hands-on-bnn} and report the test error. For the optimization algorithms we take most recent sample / set of parameters as a point estimate and report the test error.  Figure \ref{fig:MNIST} presents our results.
+For MNIST we ran each of the algorithms for 800 epochs with 50 warmup epochs. For the sampling algorithms we do Bayesian averaging over all the sampled parameterisations of the BNN after warmup as is described in Section II of \cite{hands-on-bnn} and report the test error. For the optimization algorithms we take most recent sample / set of parameters as a point estimate and report the test error.  \cref{fig:MNIST} presents our results.
 
 \begin{figure}[h!]
 \centering
@@ -98,7 +94,7 @@ For MNIST we ran each of the algorithms for 800 epochs with 50 warmup epochs. Fo
 \caption{Reproducing the MNIST classification experiment from \cite{sghmc}; SGHMC ($\eta = 2.0\times 10^{-6}, \alpha=0.01, \texttt{resample\_n} =0$ ), SGLD ($\eta = 4.0\times 10^{-5}$), SGD ($\eta = 1.0\times 10^{-5}$), SGD with momentum ($\eta = 1.0\times 10^{-6}, \alpha=0.01$)}
 \label{fig:MNIST}
 \end{figure}
-The results we get from MNIST classification align very closely with those in \cite{sghmc} and so we come to the same conclusion; the need for scalable and efficient Bayesian inference algorithms. The key benefit of BNNs is that we are not overconfident on out-of-distribution examples, Figure \ref{fig:B} illustrates that we still maintain this property when using SGHMC to approximately sample from the posterior distribution. We additionally conducted a brief comparison between Variational Inference (VI) and SGHMC in this setting, Figure \ref{fig:VI} outlines our findings.
+The results we get from MNIST classification align very closely with those in \cite{sghmc} and so we come to the same conclusion; the need for scalable and efficient Bayesian inference algorithms. The key benefit of BNNs is that we are not overconfident on out-of-distribution examples, \cref{fig:B} illustrates that we still maintain this property when using SGHMC to approximately sample from the posterior distribution. We additionally conducted a brief comparison between Variational Inference (VI) and SGHMC in this setting, \cref{fig:VI} outlines our findings.
 \begin{figure}[h!]
 \centering
 \begin{subfigure}{.5\textwidth}
@@ -118,7 +114,7 @@ The results we get from MNIST classification align very closely with those in \c
 \end{figure}
 The initial results suggest that SGHMC performs better than VI in this setting, although this is not the full picture. Once VI fits the variational posterior distribution $q_{\phi}$ as closely as possible to the true posterior it takes only hundreds of samples to characterise $q_{\phi}$, whereas SGHMC requires several more samples to characterise the true posterior. In practice storing thousands of parameterisations of the same NN is very costly and so this is probably why VI is a more popular choice for Bayesian inference. 
 
-We conclude this section by demonstrating our algorithms can be applied to other datasets and more complicated models, Figure \ref{fig:fashionMNIST} presents the results of running the same BNN architecture on FashionMNIST, and Figure \ref{fig:CIFAR10} demonstrates that our implementation of SGHMC can be used with convolutional neural networks (CNNs).
+We conclude this section by demonstrating our algorithms can be applied to other datasets and more complicated models, \cref{fig:fashionMNIST} presents the results of running the same BNN architecture on FashionMNIST, and \cref{fig:CIFAR10} demonstrates that our implementation of SGHMC can be used with convolutional neural networks (CNNs).
 \begin{figure}[h!]
 \centering
 \begin{subfigure}{.5\textwidth}
