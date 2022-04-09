@@ -18,47 +18,43 @@ The key idea is the concept of a `U-Turn'. This is the point at which the sample
 $$ \frac{d}{dt} |\theta - \theta_0|^2 = 2(\theta - \theta_0)\cdot\frac{d\theta}{dt} = 2(\theta - \theta_0)\cdot r< 0$$
 where we use the fact that in the dynamics of HMC (and also SGHMC) we have $\frac{d\theta}{dt} = r$. This simple fact suggests an algorithm in which we draw the sample $\theta$ once we have performed enough steps so that $(\theta - \theta_0)\cdot r< 0$. However this is too simplistic an approach - as HMC is an instance of the Metropolis Hastings algorithm we require the Markov Chain of $\theta$ to be reversible, which is not the case here.
 
-To remedy this problem, NUTS requires keeping track of a set $\mathcal{B}$, which contains all values of $(\theta, r)$ as steps are taken both forward and backwards in time. The values at the earliest and latest times considered across a single trajectory are labelled  $(\theta^-, r^-)$ and $(\theta^+, r^+)$ respectively. NUTS starts from a single $(\theta, r)$ and then steps either forward or backwards one step. It then steps forward or backwards 2 steps, then 4 steps, then 8 steps etc.\@ until a `U-Turn' is seen. A description is as follows:
+To remedy this problem, NUTS requires keeping track of a set $\mathcal{B}$, which contains all values of $(\theta, r)$ as steps are taken both forward and backwards in time. The values at the earliest and latest times considered across a single trajectory are labelled  $(\theta^-, r^-)$ and $(\theta^+, r^+)$ respectively. NUTS starts from a single $(\theta, r)$ and then steps either forward or backwards one step. It then steps forward or backwards 2 steps, then 4 steps, then 8 steps etc.\@ until a `U-Turn' is seen. See \cref{alg:nuts}.
 
-\begin{enumerate}
-    \item Start with an initial $(\theta_0, r_0)$
-    \item Set $n\leftarrow1$, $\mathcal{B}\leftarrow \{(\theta_0, r_0)\}$, $(\theta^-, r^-) \leftarrow (\theta_0, r_0) $ and $(\theta^+, r^+) \leftarrow (\theta_0, r_0) $ 
-    \item While there is no U-Turn at $(\theta^-, r^-)$ nor at $(\theta^+, r^+)$\\ (ie $(\theta^+ - \theta^-)\cdot r^- \geq 0$ and $(\theta^+ - \theta^-)\cdot r^+ \geq 0$): 
-    \begin{enumerate}
-        \item Choose to go \textit{forwards} or \textit{backwards} in time, each
-        with probability $\frac{1}{2}$.
+\begin{algorithm}
+    \caption{The NUTS algorithm}\label{alg:nuts}
+    \begin{algorithmic}[5]
+        \Require $(\theta_0, r_0)$
+        \State $r \sim \mc N(0,1)$
+        \State $n \gets 1$
+        \State $\mathcal{B}\gets \{(\theta_0, r_0)\}$
+        \State $(\theta^-, r^-) \gets (\theta_0, r_0) $
+        \State $(\theta^+, r^+) \gets (\theta_0, r_0) $
+        \While{there is no U-Turn at $(\theta^-, r^-)$ nor at $(\theta^+, r^+)$ (ie $(\theta^+ - \theta^-)\cdot r^- \geq 0$ and $(\theta^+ - \theta^-)\cdot r^+ \geq 0$)}
+            \State With probability $\frac 1 2$, choose to go \textit{forwards} or \textit{backwards} in time
+            \If{\textit{forwards}}
+                \State $(\theta, r) \gets (\theta^+, r^+)$
+                \For{$i = 1$ to $n$}
+                   \State {$(\theta, r) \gets $ step forward in time from $(\theta, r)$} \label{line:step forward; nuts}
+                   \State $\mathcal{B} \gets \{(\theta, r)\} \cup \mathcal{B}$
+                \EndFor
+                \State $(\theta^+, r^+) \gets (\theta, r)$
+            \EndIf
+            \If{\textit{backwards}}
+                \State $(\theta, r) \gets (\theta^-, r^-)$
+                \For{$i = 1$ to $n$}
+                    \State {$(\theta, r) \gets $ step backwards in time from $(\theta, r)$}\label{line:step back; nuts}
+                    \State $\mathcal{B} \gets \{(\theta, r)\} \cup \mathcal{B}$
+                \EndFor
+                \State $(\theta^-, r^-) \gets (\theta, r)$
+            \EndIf
+            \State $n \gets 2n$
+        \EndWhile
+        \State{Carefully choose a subset $\mathcal{C} \subseteq \mathcal{B}$}\label{line:choose subset; nuts} \Comment{\emph{This step is the key to the Markov Chain being reversible; we don't go into detail here}}
+        \State{Sample an element of $\mathcal{C}$}
+    \end{algorithmic}
+\end{algorithm}
 
-        \item If \textit{forwards}:
-        \begin{enumerate}
-            \item $(\theta, r) \leftarrow (\theta^+, r^+)$.
-            \item Repeat $n$ times:
-            \begin{enumerate}
-                \item $(\theta, r) \leftarrow $ Step forward in time from $(\theta, r)$
-                \item $\mathcal{B} \leftarrow (\theta, r) \cup \mathcal{B}$
-            \end{enumerate}
-            \item $(\theta^+, r^+) \leftarrow (\theta, r)$
-        \end{enumerate}
-        
-        \item If \textit{backwards}:
-        \begin{enumerate}
-            \item $(\theta, r) \leftarrow (\theta^-, r^-)$
-
-            \item Repeat n times:
-            \begin{enumerate}
-                \item $(\theta, r) \leftarrow $ Step backwards in time from $(\theta, r)$
-                \item $\mathcal{B} \leftarrow (\theta, r) \cup \mathcal{B}$
-            \end{enumerate}
-            \item $(\theta^-, r^-) \leftarrow (\theta, r)$
-    
-        \end{enumerate}
-        \item $n \leftarrow 2n$
-    \end{enumerate}
-    \item Carefully choose a subset $\mathcal{C} \subseteq \mathcal{B}$. This step is the key to the Markov Chain being reversible, however for clarity's sake we will not go into detail as to how this is done here.
-    \item Sample an element of $\mathcal{C}$
-
-\end{enumerate}
-
-The benefit to this algorithm is that it removes the need to set the number of steps performed before we sample, as we keep stepping until a `U-Turn' is seen. We should note here that in the original form of NUTS, the `step' being referred to in $3biiA$ and $3ciiA$ is the step of the HMC algorithm. We edited the NUTS Pyro source code to make it perform SGHMC steps, and we named this SGNUTS.
+The benefit to this algorithm is that it removes the need to set the number of steps performed before we sample, as we keep stepping until a `U-Turn' is seen. We should note here that in the original form of NUTS, the `step' being referred to in \cref{line:step forward; nuts} and \cref{line:step back; nuts} is the step of the HMC algorithm. We edited the NUTS Pyro source code to make it perform SGHMC steps, and we named this SGNUTS.
 
 There were some doubts as to whether the NUTS algorithm would work when using SGHMC steps instead of HMC steps. This was because NUTS requires the ability to step backwards in time, while an SGHMC step includes an injection of stochastic noise. As there is no action that undoes this injection, there was a worry that the backwards step through time in NUTS would become a problem. We explain how we attempted to solve this problem at the end of the next section.
 

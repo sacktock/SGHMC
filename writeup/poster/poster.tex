@@ -1,4 +1,4 @@
-\documentclass[17pt,a0paper]{tikzposter}
+\documentclass[17pt, a0paper, blockverticalspace=0.8cm, colspace=0.8cm]{tikzposter}
 
 % Suppress some useless warnings
 \usepackage{silence}
@@ -7,11 +7,11 @@
 
 % \usetheme{Default}
 % \usetheme{Rays}
-\usetheme{Basic}
+% \usetheme{Basic}
 % \usetheme{Simple}
 % \usetheme{Envelope}
 % \usetheme{Wave}
-% \usetheme{Board}
+\usetheme{Board}
 % \usetheme{Autumn}
 % \usetheme{Desert}
 
@@ -35,8 +35,8 @@
 \usepackage[T1]{fontenc}
 
 \title{Stochastic Gradient Hamiltonian Monte Carlo}
-\author{Candidate Numbers: Sam Adam-Day, 1059459, 1060482 and 1058141}
-\institute{University of Oxford}
+\author{Candidate Numbers: 1302365, 1059459, 1060482 and 1058141}
+\institute{University of Oxford\vspace{-1.5em}}
 
 
 % Bibliography
@@ -44,6 +44,7 @@
 
 \begin{document}
 
+	% \vspace*{-100em}
 	\maketitle
 	
 		\begin{columns}
@@ -63,7 +64,7 @@
 		%%% First column %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		\column{0.5}
 		\block{Stochastic Gradient Hamiltonian Monte Carlo}{
-		Hamiltonian Monte Carlo (HMC) provides us with a useful way to sample from a posterior distributions. To do this we require a potential function $U(\theta) \propto \log p(\theta | \mathcal{D})$, as well as means to compute the gradient. At each step HMC uses all the data available to it; evaluating $U(\theta)$ and computing $\nabla U(\theta)$ is computationally expensive for large datasets, rendering HMC almost useless. As such, this motivated the development of the Stochastic Gradient Hamiltonian Monte Carlo algorithm (SGHMC), which is introduced by the paper in question \cite{sghmc}. It uses randomly sampled mini-batches of data to produce noisy estimates of the gradient $\nabla \widetilde U(\theta)$, which gives SGHMC a significant speed-up compared to HMC. In this paper, Chen et al first introduce a Naive SGHMC algorithm, demonstrating the pitfalls of using noisy gradient estimates. They also introduce the full SGHMC algorithm that uses friction to overcome the need for a costly MH correction step. They further demonstrate the links between SGHMC and both Stochastic Gradient Descent (SGD) with momentum, and Stochastic Gradient Langevin Dynamics (SGLD). They then run experiments using SGHMC to empirically back up their theoretical claims and show that SGHMC is a candidate algorithm for scalable Bayesian inference. We implemented our own version of SGHMC along with some other algorithms and reproduced a number of Chen et al's experiments. The repository for our code can be found at https://github.com/sacktock/SGHMC.
+		Hamiltonian Monte Carlo (HMC) provides us with a useful way to sample from a posterior distributions. To do this we require a potential function $U(\theta) \propto \log p(\theta | \mathcal{D})$, as well as means to compute the gradient. At each step HMC uses all the data available to it; evaluating $U(\theta)$ and computing $\nabla U(\theta)$ is computationally expensive for large datasets, rendering HMC almost useless. As such, this motivated the development of the Stochastic Gradient Hamiltonian Monte Carlo algorithm (SGHMC), which is introduced by the paper in question \cite{sghmc}. It uses randomly sampled mini-batches of data to produce noisy estimates of the gradient $\nabla \widetilde U(\theta)$, which gives SGHMC a significant speed-up compared to HMC. In this paper, Chen et al first introduce a Naive SGHMC algorithm, demonstrating the pitfalls of using noisy gradient estimates. They also introduce the full SGHMC algorithm that uses friction to overcome the need for a costly MH correction step. They further demonstrate the links between SGHMC and both Stochastic Gradient Descent (SGD) with momentum, and Stochastic Gradient Langevin Dynamics (SGLD). They then run experiments using SGHMC to empirically back up their theoretical claims and show that SGHMC is a candidate algorithm for scalable Bayesian inference. We implemented our own version of SGHMC along with some other algorithms and reproduced a number of Chen et al's experiments. The repository for our code can be found at \url{https://github.com/sacktock/SGHMC}.
 	
 		
 	}
@@ -114,9 +115,14 @@
             \includegraphics[width=120mm]{Images/SGNUTS_Fashion.png}
             \end{tikzfigure} }
 
-			\block{References}{
-		\printbibliography[heading=none]
-}
+
+			\block{Further Research}{
+			\begin{itemize}
+				\item Implementation of a hybrid SGNUTS and SGHMC algorithm - SGNUTS quickly reaches the posterior, however SGHMC is faster at sampling when at the posterior. We could investigate the power of using SGNUTS for the first few epochs or during warmup, followed by SGHMC.
+			   \item Tuning the CNN used to classify CIFAR10. Currently we have shown that our implementation of SGHMC can start classifying CIFAR10, however we could acheive better accuracies with more time to investigate other architectures and do a more thorough hyperparameter search.
+			   \item Further investigate methods of estimating the gradient noise $B$, as using empirical Fisher was computationally expensive for high dimensional models.
+			   \item Compare more thoroughly our implementation of SGHMC to Variational Inference.
+			\end{itemize}		}
 		
 		%%% Second column %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		\column{0.5}
@@ -170,13 +176,10 @@ Using our implementations we illustrate below how sampling algorithms differ fro
             \end{tikzfigure} 		
 	}
 		
-		\block{Further Research}{
-		\begin{itemize}
-		    \item Implementation of a hybrid SGNUTS and SGHMC algorithm - SGNUTS quickly reaches the posterior, however SGHMC is faster at sampling when at the posterior. We could investigate the power of using SGNUTS for the first few epochs or during warmup, followed by SGHMC.
-		   \item Tuning the CNN used to classify CIFAR10. Currently we have shown that our implementation of SGHMC can start classifying CIFAR10, however we could acheive better accuracies with more time to investigate other architectures and do a more thorough hyperparameter search.
-		   \item Further investigate methods of estimating the gradient noise $B$, as using empirical Fisher was computationally expensive for high dimensional models.
-		   \item Compare more thoroughly our implementation of SGHMC to Variational Inference.
-		\end{itemize}		}
+
+	\block{References}{
+		\printbibliography[heading=none]
+}
 		
 	\end{columns}
 	
