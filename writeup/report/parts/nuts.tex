@@ -29,7 +29,7 @@ To remedy this problem, NUTS requires keeping track of a set $\mathcal{B}$, whic
         \State $\mathcal{B}\gets \{(\theta_0, r_0)\}$
         \State $(\theta^-, r^-) \gets (\theta_0, r_0) $
         \State $(\theta^+, r^+) \gets (\theta_0, r_0) $
-        \While{there is no U-Turn at $(\theta^-, r^-)$ nor at $(\theta^+, r^+)$}
+        \While{there is no U-Turn at $(\theta^-, r^-)$ nor at $(\theta^+, r^+)$ (ie $(\theta^+ - \theta^-)\cdot r^- \geq 0$ and $(\theta^+ - \theta^-)\cdot r^+ \geq 0$)}
             \State With probability $\frac 1 2$, choose to go \textit{forwards} or \textit{backwards} in time
             \If{\textit{forwards}}
                 \State $(\theta, r) \gets (\theta^+, r^+)$
