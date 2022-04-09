@@ -73,9 +73,10 @@ $$\begin{cases}
 $$
 where $\eta = \epsilon^2 M^{-1}, \alpha = \epsilon M^{-1}C, \wh{\beta} = \eta M^{-1}\wh{B}$. In all our experiments in this section we set the mass matrix $M $ to the identity, and the noise model $\wh{\beta} = \wh{B} = 0$. Other than the architecture of the BNN there are now only 3 hyperparameters for SGHMC, the learning rate $\eta$, the momentum decay $\alpha$ and the batch size $|\wt{\D}|$, in all our experiments we fixed $|\wt{\D}| = 500$ which follows from \cite{sghmc}.
 
-To build on top of the work in \cite{sghmc} we implemented learning rate annealing for SGLD and following \cite{sgld} we weighted the samples by the learning rate as follows:
-$$\mathbb{E}[f(\theta)] \approx \frac{\sum^T_{t=1} \epsilon_t f(\theta_t)}{\sum^T_{t=1} \epsilon_t}$$
-Although since $f$ is a classifier we can ignore the denominator. Our BNN followed the same architecture as in \cite{sghmc}, that is one linear layer with 100 hidden units followed by ReLU activation followed by another linear layer and a log softmax for multi-class classification. The weights and biases for both linear layers are sampled from univariate standard normal distributions, but the Pyro method \texttt{to\_event()} declares dependence between the parameters. 
+To build on top of the work in \cite{sghmc} we implemented learning rate annealing for SGLD, and following \cite{sgld} we performed a weighted average of our samples using the learning rate. With $f_\theta(\textbf{x})$ being our softmax vector formed from a classifier with parameters $\theta$ with input $\textbf{x}$, we did this as follows:
+$$\mathbb{E}[f_{\theta_T}(\textbf{x})] \approx \frac{\sum^T_{t=1} \eta_t f_{\theta_t}(\textbf{x})}{\sum^T_{t=1} \eta_t}$$
+
+Note that as $f$ is a classifier we can ignore the denominator. Our BNN followed the same architecture as in \cite{sghmc}, that is one linear layer with 100 hidden units followed by ReLU activation followed by another linear layer and a log softmax for multi-class classification. The weights and biases for both linear layers are sampled from univariate standard normal distributions, but the Pyro method \texttt{to\_event()} declares dependence between the parameters. 
 
 Our implementations of SGD and SGD with momentum are meant to be used directly with Pyro, and so Gaussian priors on the weights and biases is equivalent to L2 regularization in the non-Bayesian paradigm. We experimented with regularization strengths of $\lambda \in \{0.1, 1.0, 10.0\}$ and found $\lambda = 1.0$ to be the most effective. Additionally we implemented weight decay for both SGD and SGD with momentum but found that this didn't improve anything in this setting.
 
@@ -83,9 +84,9 @@ For the momentum based algorithms, SGHMC and SGD with momentum, we tried $\eta \
 
 For SGLD and SGD, we tried $\eta \in \{1.0, 2.0, 4.0, 6.0\} \times 10^{-5}$, for SGLD we also tried learning rate annealing but it proved not to make much of a difference in this setting so we ignored it in the end. The best configuration for SGLD was $\eta = 4.0\times 10^{-5}$, and for SGD the best configuration was $\eta = 1.0\times 10^{-5}$.
 
-For MNIST we ran each of the algorithms for 800 epochs with 50 warmup epochs. For the sampling algorithms we do Bayesian averaging over all the sampled parameterisations of the BNN after warmup as is described below and in Section II of \cite{hands-on-bnn} and report the test error.
+For MNIST we ran each of the algorithms for 800 epochs with 50 warmup epochs. For the sampling algorithms the warmup epochs allow the sampler to reach the posterior distribution, and then we perform Bayesian averaging over the set $\Theta$, which consists of all of the sampled $\theta$. We then report the test error of this method. Bayesian averaging is described in Section II of \cite{hands-on-bnn} and is performed as follows:
 $$\mathbf{\hat p} = \sum_{\theta_i \in \Theta} f_{\theta_i} (\mathbf{x}) \qquad ; \qquad \mathbf{\hat y} = \text{argmax}_{i} \{ p_i \in \mathbf{\hat p} \}$$
-For the optimization algorithms we take most recent sample / set of parameters as a point estimate and report the test error.  \cref{fig:MNIST} presents our results.
+For the optimization algorithms we take the most recent sample / set of parameters as a point estimate and report the test error.  \cref{fig:MNIST} presents our results.
 \begin{figure}[h!]
 \centering
 \includegraphics[width=100mm]{parts/Images/MNIST.png}
@@ -130,3 +131,5 @@ We conclude this section by demonstrating our algorithms can be applied to other
 \caption{{\bf Left} (a) FashionMNIST classification; SGHMC ($\eta = 1.0\times 10^{-6}, \alpha=0.01, \texttt{resample\_n} =0$ ), SGLD ($\eta = 1.0\times 10^{-5}$), SGD ($\eta = 1.0\times 10^{-5}$), SGD with momentum ($\eta = 1.0\times 10^{-6}, \alpha=0.01$); \texttt{warmup\_epochs} $= 100$. {\bf Right} (b) Convolutional BNN with 2 convolutional layers, batch norm, max pooling and tanh activations followed by two Bayesian linear layers with tanh activation;  SGHMC ($\eta = 1.0\times 10^{-6}, \alpha=0.01, \texttt{resample\_n} =0$ ) ; \texttt{warmup\_epochs} $= 150$.}
 \label{fig:other-datasets}
 \end{figure}
+
+\end{document}
