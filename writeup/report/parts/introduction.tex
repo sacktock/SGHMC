@@ -2,17 +2,27 @@
 
 \section{Introduction}
 
+Hamiltonian Monte Carlo (HMC) methods already provide a way to sample from a posterior distribution. These methods use all data available to them to produce a potential energy function:
+\begin{equation*}
+    U(\theta) = - \sum_{x\in\mathcal{D}}\log p(x| \theta) - \log p(\theta ) \propto -\log p(\theta | \mathcal{D})
+\end{equation*}
+which, along with $\nabla U(\theta)$, is sufficient to sample from the posterior (as will be discussed in the background section). Computing $U(\theta)$ and $\nabla U(\theta)$ can be computationally expensive for large datasets, and so research into Stochastic Gradient Hamiltonian Monte Carlo (SGHMC) methods began with \cite{sghmc}, which use subsets of the data to produce noisy estimates of $U(\theta)$ and $\nabla U(\theta)$. We decided to investigate the paper that introduced SGHMC. It starts with a description of HMC, and then introduces a Naïve SGHMC algorithm. It then goes on to introduce SGHMC (the main algorithm), and then it runs a number of experiments using these algorithms.
+
+Our motivation to choose this paper stemmed from the fact that the SGHMC algorithm is relatively simple, and so we would have more time to investigate other datasets and ideas. It is also computationally fast, allowing us to run experiments on our home computers. We reproduced the following experiments from \cite{sghmc}:
+
 \begin{itemize}
-    \item Overview of paper and its context.
-    \item Which experiments replicated, and rationale for this choice.
-    \item Target questions of paper.
-    \item Experimental methodology.
-    \item Implementation details.
-    \begin{itemize}
-        \item Integration with Pyro.
-        \item Which parts are new, and which are from publicly available code?
-        \item Details about how key aspects were implemented.
-    \end{itemize}
-    \item Link to repository.
-    \item New aspects?
+    \item Sampling $\theta$ from the posterior with $U(\theta) = -2\theta^2 + \theta^4$ using HMC, Naive SGHMC and SGHMC
+    \item Sampling $(\theta,r)$ generated from $U(\theta) = \frac{1}{2}\theta^2$ with HMC, and from $U(\theta) = \frac{1}{2}\theta^2 + \mathcal{N}(0,4)$ as a proxy for SGHMC.
+    \item Classifying the MNIST dataset \cite{mnist} using SGHMC as well as with Stochastic Gradient Descent, Stochastic Gradient Descent with momentum, and Stochastic Gradient Langevin Dynamics.
 \end{itemize}
+
+We also considered some new ideas:
+
+\begin{itemize}
+    \item We extended the `No U-Turn Sampler' (NUTS) from \cite{nuts} to work with SGHMC to produce our novel algorithm SGNUTS.
+    \item We ran experiments on a new dataset of FashionMNIST \cite{fashion-mnist}.
+    \item We briefly introduced some Convolutional Neural Networks (CNNs) to see how accurate SGHMC was at classifying CIFAR10 \cite{cifar10}.
+    \item We attempted to evaluate the noisiness of the data ($B$ in the literature and in what follows) and used this to increase the algorithm's efficiency.
+\end{itemize}
+
+The repository for our code is found at \url{https://github.com/sacktock/SGHMC}.

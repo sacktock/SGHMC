@@ -1,18 +1,165 @@
 
-@InProceedings{sghmc,
-  title = 	 {Stochastic Gradient Hamiltonian Monte Carlo},
-  author = 	 {Chen, Tianqi and Fox, Emily and Guestrin, Carlos},
-  booktitle = 	 {Proceedings of the 31st International Conference on Machine Learning},
-  pages = 	 {1683--1691},
-  year = 	 {2014},
-  editor = 	 {Xing, Eric P. and Jebara, Tony},
-  volume = 	 {32},
-  number =       {2},
-  series = 	 {Proceedings of Machine Learning Research},
-  address = 	 {Bejing, China},
-  month = 	 {Jun},
-  publisher =    {PMLR},
-  pdf = 	 {http://proceedings.mlr.press/v32/cheni14.pdf},
-  url = 	 {https://proceedings.mlr.press/v32/cheni14.html},
-  abstract = 	 {Hamiltonian Monte Carlo (HMC) sampling methods provide a mechanism for defining distant proposals with high acceptance probabilities in a Metropolis-Hastings framework, enabling more efficient exploration of the state space than standard random-walk proposals.  The popularity of such methods has grown significantly in recent years.  However, a limitation of HMC methods is the required gradient computation for simulation of the Hamiltonian dynamical system-such computation is infeasible in problems involving a large sample size or streaming data. Instead, we must rely on a noisy gradient estimate computed from a subset of the data.  In this paper, we explore the properties of such a stochastic gradient HMC approach. Surprisingly, the natural implementation of the stochastic approximation can be arbitrarily bad.  To address this problem we introduce a variant that uses second-order Langevin dynamics with a friction term that counteracts the effects of the noisy gradient, maintaining the desired target distribution as the invariant distribution.  Results on simulated data validate our theory.  We also provide an application of our methods to a classification task using neural networks and to online Bayesian matrix factorization.}
+@article{duane-hmc,
+  title    = {Hybrid Monte Carlo},
+  journal  = {Physics Letters B},
+  volume   = {195},
+  number   = {2},
+  pages    = {216-222},
+  year     = {1987},
+  issn     = {0370-2693},
+  doi      = {https://doi.org/10.1016/0370-2693(87)91197-X},
+  url      = {https://www.sciencedirect.com/science/article/pii/037026938791197X},
+  author   = {Simon Duane and A.D. Kennedy and Brian J. Pendleton and Duncan Roweth},
+  abstract = {We present a new method for the numerical simulation of lattice field theory. A hybrid (molecular dynamics/Langevin) algorithm is used to guide a Monte Carlo simulation. There are no discretization errors even for large step sizes. The method is especially efficient for systems such as quantum chromodynamics which contain fermionic degrees of freedom. Detailed results are presented for four-dimensional compact quantum electrodynamics including the dynamical effects of electrons.}
+}
+
+@inbook{neal-hmc,
+  author    = {Radford M. Neal},
+  chapter   = {MCMC Using Hamiltonian Dynamics},
+  editor    = {BySteve Brooks and Andrew Gelman and Galin Jones and Xiao-Li Meng},
+  pages     = {113--162},
+  publisher = {Chapman and Hall/CRC},
+  title     = {Handbook of Markov Chain Monte Carlo},
+  year      = {2011},
+  isbn      = {9780429138508}
+}
+
+@inproceedings{sghmc,
+  title     = {Stochastic Gradient Hamiltonian Monte Carlo},
+  author    = {Chen, Tianqi and Fox, Emily and Guestrin, Carlos},
+  booktitle = {Proceedings of the 31st International Conference on Machine Learning},
+  pages     = {1683--1691},
+  year      = {2014},
+  editor    = {Xing, Eric P. and Jebara, Tony},
+  volume    = {32},
+  number    = {2},
+  series    = {Proceedings of Machine Learning Research},
+  address   = {Bejing, China},
+  month     = {Jun},
+  publisher = {PMLR},
+  pdf       = {http://proceedings.mlr.press/v32/cheni14.pdf},
+  url       = {https://proceedings.mlr.press/v32/cheni14.html},
+  abstract  = {Hamiltonian Monte Carlo (HMC) sampling methods provide a mechanism for defining distant proposals with high acceptance probabilities in a Metropolis-Hastings framework, enabling more efficient exploration of the state space than standard random-walk proposals.  The popularity of such methods has grown significantly in recent years.  However, a limitation of HMC methods is the required gradient computation for simulation of the Hamiltonian dynamical system-such computation is infeasible in problems involving a large sample size or streaming data. Instead, we must rely on a noisy gradient estimate computed from a subset of the data.  In this paper, we explore the properties of such a stochastic gradient HMC approach. Surprisingly, the natural implementation of the stochastic approximation can be arbitrarily bad.  To address this problem we introduce a variant that uses second-order Langevin dynamics with a friction term that counteracts the effects of the noisy gradient, maintaining the desired target distribution as the invariant distribution.  Results on simulated data validate our theory.  We also provide an application of our methods to a classification task using neural networks and to online Bayesian matrix factorization.}
+}
+
+@inproceedings{sgld,
+  title={Bayesian learning via stochastic gradient Langevin dynamics},
+  author={Welling, Max and Teh, Yee W},
+  booktitle={Proceedings of the 28th international conference on machine learning (ICML-11)},
+  pages={681--688},
+  year={2011},
+  organization={Citeseer}
+}
+
+@article{hands-on-bnn,
+  title={Hands-on Bayesian neural networks--a tutorial for deep learning users},
+  author={Jospin, Laurent Valentin and Buntine, Wray and Boussaid, Farid and Laga, Hamid and Bennamoun, Mohammed},
+  journal={arXiv preprint arXiv:2007.06823},
+  year={2020}
+}
+
+@misc{sgld-fisher,
+  doi = {10.48550/ARXIV.1206.6380},
+  
+  url = {https://arxiv.org/abs/1206.6380},
+  
+  author = {Ahn, Sungjin and Korattikara, Anoop and Welling, Max},
+  
+  keywords = {Machine Learning (cs.LG), Computation (stat.CO), Machine Learning (stat.ML), FOS: Computer and information sciences, FOS: Computer and information sciences},
+  
+  title = {Bayesian Posterior Sampling via Stochastic Gradient Fisher Scoring},
+  
+  publisher = {arXiv},
+  
+  year = {2012},
+  
+  copyright = {arXiv.org perpetual, non-exclusive license}
+}
+
+@inproceedings{nuts,
+  title     = {The No-U-Turn Sampler: Adaptively Setting Path Lengths in Hamiltonian Monte Carlo},
+  author    = {Hoffman, Matthew and Gelman, Andrew},
+  year      = {2011},
+  pdf       = {https://arxiv.org/pdf/1111.4246.pdf},
+  url       = {https://arxiv.org/abs/1111.4246},
+  abstract  = {Hamiltonian Monte Carlo (HMC) is a Markov chain Monte Carlo (MCMC) algorithm that avoids the random walk behavior and sensitivity to correlated parameters that plague many MCMC methods by taking a series of steps informed by first-order gradient information. These features allow it to converge to high-dimensional target distributions much more quickly than simpler methods such as random walk Metropolis or Gibbs sampling. However, HMC's performance is highly sensitive to two user-specified parameters: a step size {\epsilon} and a desired number of steps L. In particular, if L is too small then the algorithm exhibits undesirable random walk behavior, while if L is too large the algorithm wastes computation. We introduce the No-U-Turn Sampler (NUTS), an extension to HMC that eliminates the need to set a number of steps L. NUTS uses a recursive algorithm to build a set of likely candidate points that spans a wide swath of the target distribution, stopping automatically when it starts to double back and retrace its steps. Empirically, NUTS perform at least as efficiently as and sometimes more efficiently than a well tuned standard HMC method, without requiring user intervention or costly tuning runs. We also derive a method for adapting the step size parameter {\epsilon} on the fly based on primal-dual averaging. NUTS can thus be used with no hand-tuning at all. NUTS is also suitable for applications such as BUGS-style automatic inference engines that require efficient "turnkey" sampling algorithms.}
+}
+
+@inproceedings{nuts_code,
+  title     = {Pyro NUTS Code},
+  url       = {https://docs.pyro.ai/en/stable/_modules/pyro/infer/mcmc/nuts.html},
+  year = {2019},
+  author = {Uber Technologies, Inc.}
+}
+
+@article{pyro,
+author = {Bingham, Eli and Chen, Jonathan P. and Jankowiak, Martin and Obermeyer, Fritz and Pradhan, Neeraj and Karaletsos, Theofanis and Singh, Rohit and Szerlip, Paul and Horsfall, Paul and Goodman, Noah D.},
+title = {Pyro: Deep Universal Probabilistic Programming},
+year = {2019},
+issue_date = {January 2019},
+publisher = {JMLR.org},
+volume = {20},
+number = {1},
+issn = {1532-4435},
+abstract = {Pyro is a probabilistic programming language built on Python as a platform for developing advanced probabilistic models in AI research. To scale to large data sets and high-dimensional models, Pyro uses stochastic variational inference algorithms and probability distributions built on top of PyTorch, a modern GPU-accelerated deep learning framework. To accommodate complex or model-specific algorithmic behavior, Pyro leverages Poutine, a library of composable building blocks for modifying the behavior of probabilistic programs.},
+journal = {J. Mach. Learn. Res.},
+month = {jan},
+pages = {973–978},
+numpages = {6},
+keywords = {deep learning, approximate Bayesian inference, graphical models, generative models, probabilistic programming}
+}
+
+@misc{fashion-mnist,
+  doi = {10.48550/ARXIV.1708.07747},
+  
+  url = {https://arxiv.org/abs/1708.07747},
+  
+  author = {Xiao, Han and Rasul, Kashif and Vollgraf, Roland},
+  
+  keywords = {Machine Learning (cs.LG), Computer Vision and Pattern Recognition (cs.CV), Machine Learning (stat.ML), FOS: Computer and information sciences, FOS: Computer and information sciences},
+  
+  title = {Fashion-MNIST: a Novel Image Dataset for Benchmarking Machine Learning Algorithms},
+  
+  publisher = {arXiv},
+  
+  year = {2017},
+  
+  copyright = {arXiv.org perpetual, non-exclusive license}
+}
+
+@misc{cifar10,
+  author       = {Alex Krizhevsky},
+  year = {2009},
+  title        = {Learning Multiple Layers of Features from Tiny Images},
+  url         = {https://www.cs.toronto.edu/~kriz/learning-features-2009-TR.pdf}
+}
+
+@article{mnist,
+  title={The mnist database of handwritten digit images for machine learning research},
+  author={Deng, Li},
+  journal={IEEE Signal Processing Magazine},
+  volume={29},
+  number={6},
+  pages={141--142},
+  year={2012},
+  publisher={IEEE}
+} 
+
+
+@book{bishop2006pattern,
+  title={Pattern recognition and machine learning},
+  author={Bishop, Christopher M and Nasrabadi, Nasser M},
+  volume={4},
+  number={4},
+  year={2006},
+  publisher={Springer},
+  chapter={11},
+  pages={523-541}
+}
+
+@inproceedings{simu_code,
+  title     = {Simulation Code},
+  url       = {https://github.com/tqchen/ML-SGHMC/tree/master},
+  year = {2014},
+  author = {Chen, Tianqi and Fox, Emily and Guestrin, Carlos}
 }

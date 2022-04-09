@@ -14,16 +14,23 @@
 \usepackage{amsthm}
 \usepackage{thmtools}
 \usepackage{csquotes}
+\usepackage{commath}
+\usepackage{url}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 \usepackage[inline]{enumitem}
 \usepackage[hidelinks]{hyperref}
 \usepackage[capitalize,noabbrev]{cleveref}
 \usepackage[final]{microtype}
+\usepackage{caption}
+\usepackage{subcaption}
 
 \usepackage[charter]{mathdesign}
 \usepackage[T1]{fontenc}
 
 % Fix me notes
 \usepackage[draft]{fixme}
+\usepackage{svg}
 \fxusetheme{color}
 
 % Theorem styles
@@ -62,8 +69,9 @@ by Tianqi Chen, Emily B. Fox and Carlos Guestrin}
 
 	\input{parts/introduction.tex}
 	\input{parts/background.tex}
+	\input{parts/implementation.tex}
 	\input{parts/experiments.tex}
-	\input{parts/extensions.tex}
+	\input{parts/nuts.tex}
 	\input{parts/conclusion.tex}
 
 	\printbibliography
