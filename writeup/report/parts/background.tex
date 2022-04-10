@@ -67,7 +67,7 @@ The SGHMC method adds a `friction term' $B M^{-1} r$ to the momentum update. Sin
     \dif\theta &= M^{-1}r \dif t \\
     \dif r &= - \nabla U(\theta) \dif t - CM^{-1}r \dif t + \mc N(0, 2(C - \wh B(\theta))\dif t) + \mc N(0, 2B(\theta) \dif t)
 \end{align*}
-The algorithm is given in \cref{alg:sghmc}. In the case where $\wh B = B$, these dynamics accurately traverse from the posterior distribution. In practice, we must rely on an inaccurate estimate $\wh B$. The simplest choice is $\wh B = 0$. A better but more costly estimate is $\wh B(\theta) = \frac 1 2 \ep \wh V(\theta)$, where $\wh V$ is the observed (empirical Fisher) information \cite{sgld-fisher}. The friction term $C$ can then be taken as a hyperparameter, and set so as to counteract the inaccuracies of the estimate $\wh B$.
+The algorithm is given in \cref{alg:sghmc}. Ideally we would have $\wh B = B$, allowing us to reach the posterior distribution in an efficient manner. In practice, we must rely on an inaccurate estimate $\wh B$. The simplest choice is $\wh B = 0$. A better but more costly estimate is $\wh B(\theta) = \frac 1 2 \ep \wh V(\theta)$, where $\wh V$ is the observed (empirical Fisher) information \cite{sgld-fisher}. The friction term $C$ can then be taken as a hyperparameter, and set so as to counteract the inaccuracies of the estimate $\wh B$.
 
 \begin{algorithm}
     \caption{The SGHMC algorithm}\label{alg:sghmc}
