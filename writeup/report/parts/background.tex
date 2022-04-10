@@ -10,7 +10,7 @@ We begin with the prior distribution $p(\theta)$ and likelihood $p(x \mid \theta
 \begin{equation*}
     U(\theta) \defeq - \sum_{x \in \D}\log p(x \mid \theta) - \log p(\theta)
 \end{equation*}
-Note that, using Bayes' rule, we have that the posterior $p(\theta \mid \D) \propto \exp(-U)$. Hamiltonian dynamics introduces an auxiliary set of momentum variables $r$. These dynamics have a physical interpretation in which an object moves about a landscape determined by $U$. We let this object have \emph{mass matrix} $M$, which is typically set to the identity matrix. Then $U(\theta)$ represents the potential energy of the object, and its kinetic energy is given by $\frac 1 2 r^{\mathsf T} M^{-1} r$. The total energy of the system is a quantity known as the \emph{Hamiltonian function}:
+Note that, using Bayes' rule, we have that the posterior $p(\theta \mid \D) \propto \exp(-U)$. Hamiltonian dynamics introduce an auxiliary set of momentum variables $r$. These dynamics have a physical interpretation in which an object moves about a landscape determined by $U$. We let this object have \emph{mass matrix} $M$, which is typically set to the identity matrix. Then $U(\theta)$ represents the potential energy of the object, and its kinetic energy is given by $\frac 1 2 r^{\mathsf T} M^{-1} r$. The total energy of the system is a quantity known as the \emph{Hamiltonian function}:
 \begin{equation*}
     H(\theta, r) = U(\theta) + \frac 1 2 r^{\mathsf T} M^{-1} r
 \end{equation*}
