@@ -54,7 +54,7 @@ To remedy this problem, NUTS requires keeping track of a set $\mathcal{B}$, whic
     \end{algorithmic}
 \end{algorithm}
 
-The benefit to this algorithm is that it removes the need to set the number of steps performed before we sample, as we keep stepping until a `U-Turn' is seen. We should note here that in the original form of NUTS, the `step' being referred to in \cref{line:step forward; nuts} and \cref{line:step back; nuts} is the step of the HMC algorithm. We edited the NUTS Pyro source code to make it perform SGHMC steps, and we named this SGNUTS.
+The benefit to this algorithm is that it removes the need to set the number of steps performed before we sample, as we keep stepping until a `U-Turn' is seen. We should note here that in the original form of NUTS, the `step' being referred to in \cref{line:step forward; nuts} and \cref{line:step back; nuts} is the step of the HMC algorithm. We edited the NUTS Pyro source code to make it perform SGHMC steps, and we named this SGNUTS (Stochastic Gradient No U-Turn Sampler).
 
 There were some doubts as to whether the NUTS algorithm would work when using SGHMC steps instead of HMC steps. This was because NUTS requires the ability to step backwards in time, while an SGHMC step includes an injection of stochastic noise. As there is no action that undoes this injection, there was a worry that the backwards step through time in NUTS would become a problem. We explain how we attempted to solve this problem at the end of the next section.
 
