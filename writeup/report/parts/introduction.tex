@@ -13,7 +13,7 @@ We were further motivated to choose this paper as SGHMC is a relatively simple a
 \begin{itemize}
     \item Sampling $\theta$ using the potential function $U(\theta) = -2\theta^2 + \theta^4$, with $\mathcal{N}(0,4)$ noise added to the gradient of this to give $\nabla \widetilde U (\theta)$. This noise potential is a proxy for the noisy potential used by SGHMC. We used the following algorithms: HMC (with and without MH correction), Naive SGHMC (with and without MH correction) and SGHMC.
 
-    \item  Sampling $(\theta,r)$ using the potential function $U(\theta) = \frac{1}{2}\theta^2$, , with $\mathcal{N}(0,4)$ noise added to the gradient of this to give $\nabla \widetilde U (\theta)$. We used the following algorithms: HMC, Naive SGHMC (with and without momentum resampling) and SGHMC.
+    \item  Sampling $(\theta,r)$ using the potential function $U(\theta) = \frac{1}{2}\theta^2$, with $\mathcal{N}(0,4)$ noise added to the gradient of this to give $\nabla \widetilde U (\theta)$. We used the following algorithms: HMC, Naive SGHMC (with and without momentum resampling) and SGHMC.
   \item Comparing the autocorrelation times, as well as the error in the covariance of the samples, of SGHMC and SGLD.
     \item Classifying the MNIST dataset \cite{mnist} using SGHMC as well as with Stochastic Gradient Descent (SGD), Stochastic Gradient Descent (SGD) with momentum, and Stochastic Gradient Langevin Dynamics (SGLD).
 \end{itemize}
