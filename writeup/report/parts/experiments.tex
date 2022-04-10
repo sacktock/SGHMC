@@ -7,7 +7,7 @@ In this next section we present the results and intuition behind the first three
 \subsubsection*{Experiment 1}
 As in \cite{sghmc} we considered the potential function $U(\theta) = -2\theta^2 + \theta^4$. This is sufficient for the purpose of checking the convergence to the target distribution for HMC. To check that the theoretical convergence of Naïve SGHMC and SGHMC are true or not we introduce noise into the gradient, and so we set:
 $$\nabla \widetilde{U}(\theta) = \nabla U(\theta) + \mathcal{N}(0,4)$$
-This now corresponds to setting the noise covariance to $V=4$ in the description of Naïve SGHMC we gave earlier. We then take samples using HMC, Naïve SGHMC and SGHMC. We also note that both HMC and Naïve SGHMC use Metropolis Hastings corrections (MH), while SGHMC has no need to. This allows us to test 5 algorithms: HMC (with MH), HMC (without MH), Naïve SGHMC (with MH), Naïve SGHMC (without MH), and SGHMC. As a small extension we also performed the same experiment with the potential function $U(\theta) = \theta^2$. The results are shown in \cref{fig:demo1,fig:demo2}.
+This now corresponds to setting the noise covariance to $V=4$ in the description of Naïve SGHMC we gave earlier. We then take samples using HMC, Naïve SGHMC and SGHMC. We also note that both HMC and Naïve SGHMC use Metropolis Hastings corrections (MH), while SGHMC has no need to. This allows us to test 5 algorithms: HMC (with MH), HMC (without MH), Naïve SGHMC (with MH), Naïve SGHMC (without MH), and SGHMC. As a small extension we also performed the same experiment with the potential function $U(\theta) = \frac 1 2\theta^2$. This allows us the compare the performance on bimodal and unimodal distributions. The results are shown in \cref{fig:demo1,fig:demo2}.
 \begin{figure}[h!]
   \includegraphics[width=.9\linewidth]{parts/Images/fig1a.pdf}
   \caption{Distributions of different sampling algorithms for the target function $U(\theta) = -2\theta^2 + \theta^4$}
@@ -32,7 +32,7 @@ These results show that friction (green) keeps Hamiltonian dynamics much closer 
 \subsubsection*{Experiment 3}
 Finally, we consider the following correlated distribution, as is done in \cite{sghmc}. \citeauthor{sghmc} note that the strength of HMC is typically in its efficiency in sampling from correlated distributions, and that SGHMC maintains this property. We reproduced the following experiment in \cite{sghmc}, where the authors \citeauthor{sghmc} compare the autocorrelation times of SGHMC and SGLD by considering the following potential function: $U(\theta)=\frac{1}{2}\theta^T\Sigma^{-1}\theta$, with $\nabla \widetilde{U}(\theta) = \Sigma^{-1}\theta + \mathcal{N}(0,I)$, where $\Sigma_{11} = \Sigma_{22} = 1$ and $\rho = \Sigma_{12} = 0.9$.  
 
-\cref{fig:sghmc vs sgld} presents the results of this experiment. The first plot shows 50 samples produced using both algorithms. The second shows the average absolute error of the sample covariance against autocorrelation time (for more details see \cite{sghmc}.
+\cref{fig:sghmc vs sgld} presents the results of this experiment. The first plot shows the first 50 samples produced using both algorithms. The second shows the average absolute error of the sample covariance against autocorrelation time over 10 million samples (for more details see \cite{sghmc}.
 \begin{figure}[h!]
   \begin{subfigure}{.5\textwidth}
   \includegraphics[width=.95\linewidth]{parts/Images/fig3b.pdf}
@@ -40,7 +40,7 @@ Finally, we consider the following correlated distribution, as is done in \cite{
   \end{subfigure}
   \begin{subfigure}{.5\textwidth}
   \includegraphics[width=.95\linewidth]{parts/Images/fig3a.pdf}
-  \caption{Autocorrelation time versus estimation error for the five setting}
+  \caption{Autocorrelation time versus estimation error for the five step-size settings}
   \end{subfigure}%
   \caption{Contrasting sampling of a bivariate Gaussian with correlation using SGHMC versus SGLD.}
   \label{fig:sghmc vs sgld}
