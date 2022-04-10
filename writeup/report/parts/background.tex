@@ -81,3 +81,5 @@ The algorithm is given in \cref{alg:sghmc}. Ideally we would have $\wh B = B$, a
         \EndFor
     \end{algorithmic}
 \end{algorithm}
+
+Lastly, we note that the added friction term prevents the dynamical system from diverging, meaning that we no longer require the Metropolis-Hasting's steps that were required for naïve SGHMC. This means we do not need to consider all of the data at each step in the SGHMC algorithm, making it fast to run even on large datasets.
