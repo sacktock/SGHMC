@@ -32,7 +32,7 @@ These results show that friction (green) keeps Hamiltonian dynamics much closer 
 \subsubsection*{Experiment 3}
 Finally, we consider the following correlated distribution, as is done in \cite{sghmc}. \citeauthor{sghmc} note that the strength of HMC is typically in its efficiency in sampling from correlated distributions, and that SGHMC maintains this property. We reproduced the following experiment in \cite{sghmc}, where the authors \citeauthor{sghmc} compare the autocorrelation times of SGHMC and SGLD by considering the following potential function: $U(\theta)=\frac{1}{2}\theta^T\Sigma^{-1}\theta$, with $\nabla \widetilde{U}(\theta) = \Sigma^{-1}\theta + \mathcal{N}(0,I)$, where $\Sigma_{11} = \Sigma_{22} = 1$ and $\rho = \Sigma_{12} = 0.9$.  
 
-\cref{fig:sghmc vs sgld} presents the results of this experiment. The first plot shows the first 50 samples produced using both algorithms. The second shows the average absolute error of the sample covariance against autocorrelation time over 10 million samples (for more details see \cite{sghmc}.
+\cref{fig:sghmc vs sgld} presents the results of this experiment. The first plot shows the first 50 samples produced using both algorithms. The second shows a plot of the average absolute error of the sample covariance against the autocorrelation time for 5 different values of the step-size (for more details see \cite{sghmc}.
 \begin{figure}[h!]
   \begin{subfigure}{.5\textwidth}
   \includegraphics[width=.95\linewidth]{parts/Images/fig3b.pdf}
@@ -40,12 +40,12 @@ Finally, we consider the following correlated distribution, as is done in \cite{
   \end{subfigure}
   \begin{subfigure}{.5\textwidth}
   \includegraphics[width=.95\linewidth]{parts/Images/fig3a.pdf}
-  \caption{Autocorrelation time versus estimation error for the five step-size settings}
+  \caption{Autocorrelation time versus absolute error of the sample covariance, for each of five step-size settings}
   \end{subfigure}%
   \caption{Contrasting sampling of a bivariate Gaussian with correlation using SGHMC versus SGLD.}
   \label{fig:sghmc vs sgld}
 \end{figure}
-We see that SGHMC samples quickly becomec uncorrelated, which is not the case for the SGLD samples - this indicates that there is an advantage in adopting SGHMC. While both SGHMC and SGLD accurately sample from the posterior, SGHMC needs fewer samples to fully explore the posterior distribution and we see that after just a few samples SGHMC has already explored the tails of the target distribution. Therefore we empirically see that SGHMC has a much faster mixing time than SGLD which is an inherent advantage.
+We see that SGHMC samples quickly becomeThe second shows a plot of the average absolute error of the sample covariance against the autocorrelation time for 5 different values of the step-size (for more details see \cite{sghmc}. uncorrelated, which is not the case for the SGLD samples - this indicates that there is an advantage in adopting SGHMC. While both SGHMC and SGLD accurately sample from the posterior, SGHMC needs fewer samples to fully explore the posterior distribution and we see that after just a few samples SGHMC has already explored the tails of the target distribution. Therefore we empirically see that SGHMC has a much faster mixing time than SGLD which is an inherent advantage.
 
 \subsection{Bayesian Neural Networks for Classification}
 For the Bayesian neural network (BNN) MNIST classification we actually used the reparameterisation of SGHMC described in the section ``Connection to SGD with Momentum'' of \cite{sghmc}. The SGHMC algorithm is reframed in terms of learning rate and momentum decay, and simulates the following dynamics instead:
